@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateCategoryPostInput {
+export class CreateCategoryBlogInput {
   @ApiProperty({ type: 'string', format: 'binary', required: false })
-  readonly categoryPostPicture?: any;
+  readonly categoryBlogPicture?: any;
 
   @ApiProperty()
   readonly name: string;
@@ -17,9 +17,9 @@ export class CreateCategoryPostInput {
   readonly slug: string;
 }
 
-export class UpdateCategoryPostInput {
+export class UpdateCategoryBlogInput {
   @ApiProperty({ type: 'string', format: 'binary', required: false })
-  readonly categoryPostPicture?: any;
+  readonly categoryBlogPicture?: any;
 
   @ApiProperty()
   readonly name: string;

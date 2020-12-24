@@ -2,18 +2,18 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Blog } from '../entities/blog.entity';
 import { Category } from '../entities/category.entity';
-import { CategoryPost } from '../entities/categoryPost.entity';
+import { CategoryBlog } from '../entities/categoryBlog.entity';
 import { Product } from '../entities/product.entity';
 import { EBlogStatus } from '../lib/constant';
 import { Connection, getManager, IsNull, Not, Repository } from 'typeorm';
-import { CreateCategoryPostInput, UpdateCategoryPostInput } from './category-post.dto';
+import { CreateCategoryBlogInput, UpdateCategoryBlogInput } from './category-blog.dto';
 
 @Injectable()
-export class CategoryPostService {
-  private readonly logger = new Logger(CategoryPostService.name);
+export class CategoryBlogService {
+  private readonly logger = new Logger(CategoryBlogService.name);
   constructor(
-    @InjectRepository(CategoryPost)
-    private categoryPostRepository: Repository<CategoryPost>,
+    @InjectRepository(CategoryBlog)
+    private categoryBlogRepository: Repository<CategoryBlog>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
     @InjectRepository(Category)
@@ -23,19 +23,19 @@ export class CategoryPostService {
     private connection: Connection,
   ) {}
 
-  async getCategoryPost(id: string) {
-    this.logger.debug(`Running api getCategoryPost at ${new Date()}`);
-    const category = await this.categoryPostRepository
+  async getCategoryBlog(id: string) {
+    this.logger.debug(`Running api getCategoryBlog at ${new Date()}`);
+    const category = await this.categoryBlogRepository
       .createQueryBuilder('category')
       .where('category."deletedAt" is null')
       .andWhere('category.id=:id', { id })
-      .cache(`category_post_${id}`)
+      .cache(`category_blog_${id}`)
       .getOne();
     if (!category) {
       throw new HttpException(
         {
           statusCode: HttpStatus.NOT_FOUND,
-          message: 'CATEGORY_POST_NOT_FOUND',
+          message: 'CATEGORY_BLOG_NOT_FOUND',
         },
         HttpStatus.NOT_FOUND,
       );
@@ -44,24 +44,24 @@ export class CategoryPostService {
   }
 
   async getCategoriesByParentId(
-    categoryPostId: string,
+    categoryBlogId: string,
     page = 1,
     limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE),
   ) {
     this.logger.debug(`Running api getCategoriesByParentId at ${new Date()}`);
-    const countCategory: number = await this.categoryPostRepository
+    const countCategory: number = await this.categoryBlogRepository
       .createQueryBuilder('category')
       .where('category."deletedAt" is null')
-      .andWhere('category."parentId"=:categoryPostId', { categoryPostId })
-      .cache(`categories_post_count${categoryPostId}`)
+      .andWhere('category."parentId"=:categoryBlogId', { categoryBlogId })
+      .cache(`categories_blog_count${categoryBlogId}`)
       .getCount();
-    const existCategories: CategoryPost[] = await this.categoryPostRepository
+    const existCategories: CategoryBlog[] = await this.categoryBlogRepository
       .createQueryBuilder('category')
       .where('category."deletedAt" is null')
-      .andWhere('category."parentId"=:categoryPostId', { categoryPostId })
+      .andWhere('category."parentId"=:categoryBlogId', { categoryBlogId })
       .limit(limit)
       .offset((page - 1) * limit)
-      .cache(`categories_post_parentId${categoryPostId}page${page}_limit${limit}`)
+      .cache(`categories_blog_parentId${categoryBlogId}page${page}_limit${limit}`)
       .getMany();
 
     const pages = Math.ceil(Number(countCategory) / limit);
@@ -76,14 +76,14 @@ export class CategoryPostService {
 
   async getCategories(page = 1, limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE)) {
     this.logger.debug(`Running api getCategories at ${new Date()}`);
-    const categoriesQuery = this.categoryPostRepository
+    const categoriesQuery = this.categoryBlogRepository
       .createQueryBuilder('category')
       .where('category."deletedAt" is null');
-    const categoriesCount = await categoriesQuery.cache(`categories_post_count_page${page}_limit${limit}`).getCount();
+    const categoriesCount = await categoriesQuery.cache(`categories_blog_count_page${page}_limit${limit}`).getCount();
     const categories = await categoriesQuery
       .limit(limit)
       .offset((page - 1) * limit)
-      .cache(`categories_post_page${page}_limit${limit}`)
+      .cache(`categories_blog_page${page}_limit${limit}`)
       .getMany();
     const pages = Math.ceil(Number(categoriesCount) / limit);
     return {
@@ -97,38 +97,38 @@ export class CategoryPostService {
 
   async getAllCategoryParent() {
     this.logger.debug(`Running api getAllCategoryParent at ${new Date()}`);
-    const categoryPostParents = await this.categoryPostRepository.find({
+    const categoryBlogParents = await this.categoryBlogRepository.find({
       where: {
         parentId: IsNull(),
       },
     });
     return {
-      data: categoryPostParents,
+      data: categoryBlogParents,
     };
   }
 
-  async createCategoryPost(categoryPostPicture: any, createCategoryPostInput: CreateCategoryPostInput) {
-    this.logger.warn(`Running api createCategoryPost at ${new Date()}`);
-    const existNameCategory = await this.categoryPostRepository.findOne({
+  async createCategoryBlog(categoryBlogPicture: any, createCategoryBlogInput: CreateCategoryBlogInput) {
+    this.logger.warn(`Running api createCategoryBlog at ${new Date()}`);
+    const existNameCategory = await this.categoryBlogRepository.findOne({
       where: {
-        name: createCategoryPostInput.name,
+        name: createCategoryBlogInput.name,
       },
     });
     if (existNameCategory) {
       throw new HttpException(
         {
           statusCode: HttpStatus.CONFLICT,
-          message: 'CATEGORY_POST_ALREADY_EXIST',
+          message: 'CATEGORY_BLOG_ALREADY_EXIST',
         },
         HttpStatus.CONFLICT,
       );
     }
 
-    let existParentId: CategoryPost;
-    if (createCategoryPostInput.parentId) {
-      existParentId = await this.categoryPostRepository.findOne({
+    let existParentId: CategoryBlog;
+    if (createCategoryBlogInput.parentId) {
+      existParentId = await this.categoryBlogRepository.findOne({
         where: {
-          id: createCategoryPostInput.parentId,
+          id: createCategoryBlogInput.parentId,
           parentId: IsNull(),
         },
       });
@@ -145,7 +145,7 @@ export class CategoryPostService {
 
     let existSlug: any = await this.productRepository
       .createQueryBuilder('product')
-      .where(`slugs::text = :slug`, { slug: `%"${createCategoryPostInput.slug}"%` })
+      .where(`slugs::text = :slug`, { slug: `%"${createCategoryBlogInput.slug}"%` })
       .getOne();
     if (existSlug) {
       throw new HttpException(
@@ -158,7 +158,7 @@ export class CategoryPostService {
     }
     existSlug = await this.blogRepository
       .createQueryBuilder('blog')
-      .where(`slugs::text = :slug`, { slug: `%"${createCategoryPostInput.slug}"%` })
+      .where(`slugs::text = :slug`, { slug: `%"${createCategoryBlogInput.slug}"%` })
       .getOne();
     if (existSlug) {
       throw new HttpException(
@@ -171,7 +171,7 @@ export class CategoryPostService {
     }
     existSlug = await this.categoryRepository
       .createQueryBuilder('category')
-      .where(`slug = :slug`, { slug: `%"${createCategoryPostInput.slug}"%` })
+      .where(`slug = :slug`, { slug: `%"${createCategoryBlogInput.slug}"%` })
       .getOne();
     if (existSlug) {
       throw new HttpException(
@@ -182,9 +182,9 @@ export class CategoryPostService {
         HttpStatus.CONFLICT,
       );
     }
-    existSlug = await this.categoryPostRepository
+    existSlug = await this.categoryBlogRepository
       .createQueryBuilder('category')
-      .where(`slug = :slug`, { slug: `%"${createCategoryPostInput.slug}"%` })
+      .where(`slug = :slug`, { slug: `%"${createCategoryBlogInput.slug}"%` })
       .getOne();
     if (existSlug) {
       throw new HttpException(
@@ -196,43 +196,43 @@ export class CategoryPostService {
       );
     }
 
-    let newCategoryPost = new CategoryPost();
-    newCategoryPost.setAttributes(createCategoryPostInput);
-    if (categoryPostPicture) {
-      newCategoryPost.picture = categoryPostPicture.filename;
+    let newCategoryBlog = new CategoryBlog();
+    newCategoryBlog.setAttributes(createCategoryBlogInput);
+    if (categoryBlogPicture) {
+      newCategoryBlog.picture = categoryBlogPicture.filename;
     }
     await this.connection.queryResultCache.clear();
     await getManager().transaction(async transactionalEntityManager => {
-      if (createCategoryPostInput.parentId && existParentId.isHaveChildren === false) {
+      if (createCategoryBlogInput.parentId && existParentId.isHaveChildren === false) {
         existParentId.isHaveChildren = true;
-        await transactionalEntityManager.save<CategoryPost>(existParentId);
+        await transactionalEntityManager.save<CategoryBlog>(existParentId);
       }
-      newCategoryPost = await transactionalEntityManager.save<CategoryPost>(newCategoryPost);
+      newCategoryBlog = await transactionalEntityManager.save<CategoryBlog>(newCategoryBlog);
     });
 
-    return { data: newCategoryPost };
+    return { data: newCategoryBlog };
   }
 
-  async updateCategoryPost(id: string, categoryPostPicture: any, updateCategoryPostInput: UpdateCategoryPostInput) {
-    this.logger.warn(`Running api updateCategoryPost at ${new Date()}`);
-    const existCategoryPost = await this.categoryPostRepository.findOne({
+  async updateCategoryBlog(id: string, categoryBlogPicture: any, updateCategoryBlogInput: UpdateCategoryBlogInput) {
+    this.logger.warn(`Running api updateCategoryBlog at ${new Date()}`);
+    const existCategoryBlog = await this.categoryBlogRepository.findOne({
       where: {
         id: id,
       },
     });
-    if (!existCategoryPost) {
+    if (!existCategoryBlog) {
       throw new HttpException(
         {
           statusCode: HttpStatus.NOT_FOUND,
-          message: 'CATEGORY_POST_NOT_EXIST',
+          message: 'CATEGORY_BLOG_NOT_EXIST',
         },
         HttpStatus.NOT_FOUND,
       );
     }
 
-    if (updateCategoryPostInput.name !== existCategoryPost.name) {
-      const existNameCategory = await this.categoryPostRepository.findOne({
-        name: updateCategoryPostInput.name,
+    if (updateCategoryBlogInput.name !== existCategoryBlog.name) {
+      const existNameCategory = await this.categoryBlogRepository.findOne({
+        name: updateCategoryBlogInput.name,
         id: Not(id),
       });
       if (existNameCategory) {
@@ -244,13 +244,13 @@ export class CategoryPostService {
           HttpStatus.CONFLICT,
         );
       }
-      existCategoryPost.name = updateCategoryPostInput.name;
+      existCategoryBlog.name = updateCategoryBlogInput.name;
     }
 
-    if (updateCategoryPostInput.slug !== existCategoryPost.slug) {
+    if (updateCategoryBlogInput.slug !== existCategoryBlog.slug) {
       let existSlug: any = await this.productRepository
         .createQueryBuilder('product')
-        .where(`slugs::text = :slug`, { slug: `%"${updateCategoryPostInput.slug}"%` })
+        .where(`slugs::text = :slug`, { slug: `%"${updateCategoryBlogInput.slug}"%` })
         .andWhere('"deletedAt" is null')
         .getOne();
       if (existSlug) {
@@ -264,7 +264,7 @@ export class CategoryPostService {
       }
       existSlug = await this.blogRepository
         .createQueryBuilder('blog')
-        .where(`slugs::text = :slug`, { slug: `%"${updateCategoryPostInput.slug}"%` })
+        .where(`slugs::text = :slug`, { slug: `%"${updateCategoryBlogInput.slug}"%` })
         .andWhere('"deletedAt" is null')
         .getOne();
       if (existSlug) {
@@ -278,7 +278,7 @@ export class CategoryPostService {
       }
       existSlug = await this.categoryRepository.findOne({
         where: {
-          slug: updateCategoryPostInput.slug,
+          slug: updateCategoryBlogInput.slug,
         },
       });
       if (existSlug) {
@@ -290,9 +290,9 @@ export class CategoryPostService {
           HttpStatus.CONFLICT,
         );
       }
-      existSlug = await this.categoryPostRepository.findOne({
+      existSlug = await this.categoryBlogRepository.findOne({
         where: {
-          slug: updateCategoryPostInput.slug,
+          slug: updateCategoryBlogInput.slug,
           id: Not(id),
         },
       });
@@ -306,30 +306,30 @@ export class CategoryPostService {
         );
       }
 
-      existCategoryPost.slug = updateCategoryPostInput.slug;
+      existCategoryBlog.slug = updateCategoryBlogInput.slug;
     }
 
-    if (updateCategoryPostInput.parentId && updateCategoryPostInput.parentId !== existCategoryPost.parentId) {
-      const parent: any = await this.categoryPostRepository
+    if (updateCategoryBlogInput.parentId && updateCategoryBlogInput.parentId !== existCategoryBlog.parentId) {
+      const parent: any = await this.categoryBlogRepository
         .createQueryBuilder('category')
         .leftJoinAndMapMany(
           'category.children',
-          CategoryPost,
+          CategoryBlog,
           'category_children',
           'category.id = category_children.parentId',
         )
-        .where('"category"."id" = :parentId', { parentId: existCategoryPost.parentId })
+        .where('"category"."id" = :parentId', { parentId: existCategoryBlog.parentId })
         .andWhere('"category"."deletedAt" is null')
         .andWhere('"category_children"."deletedAt" is null')
         .getOne();
       if (parent.children.length === 1) {
         parent.isHaveChildren = false;
-        await this.categoryPostRepository.save(parent);
+        await this.categoryBlogRepository.save(parent);
       }
 
-      const existParentId = await this.categoryPostRepository.findOne({
+      const existParentId = await this.categoryBlogRepository.findOne({
         where: {
-          id: updateCategoryPostInput.parentId,
+          id: updateCategoryBlogInput.parentId,
           parentId: IsNull(),
         },
       });
@@ -343,37 +343,37 @@ export class CategoryPostService {
         );
       }
 
-      existCategoryPost.parentId = updateCategoryPostInput.parentId;
+      existCategoryBlog.parentId = updateCategoryBlogInput.parentId;
     }
-    if (updateCategoryPostInput.description !== existCategoryPost.description) {
-      existCategoryPost.description = updateCategoryPostInput.description;
+    if (updateCategoryBlogInput.description !== existCategoryBlog.description) {
+      existCategoryBlog.description = updateCategoryBlogInput.description;
     }
-    if (categoryPostPicture) {
-      existCategoryPost.picture = categoryPostPicture.filename;
+    if (categoryBlogPicture) {
+      existCategoryBlog.picture = categoryBlogPicture.filename;
     }
 
-    await this.categoryPostRepository.save(existCategoryPost);
-    return { data: existCategoryPost };
+    await this.categoryBlogRepository.save(existCategoryBlog);
+    return { data: existCategoryBlog };
   }
 
-  async deleteCategoryPost(id: string) {
-    this.logger.warn(`Running api deleteCategoryPost at ${new Date()}`);
-    const existCategoryPost = await this.categoryPostRepository.findOne({
+  async deleteCategoryBlog(id: string) {
+    this.logger.warn(`Running api deleteCategoryBlog at ${new Date()}`);
+    const existCategoryBlog = await this.categoryBlogRepository.findOne({
       where: {
         id: id,
       },
     });
-    if (!existCategoryPost) {
+    if (!existCategoryBlog) {
       throw new HttpException(
         {
           statusCode: HttpStatus.NOT_FOUND,
-          message: 'CATEGORY_POST_NOT_EXIST',
+          message: 'CATEGORY_BLOG_NOT_EXIST',
         },
         HttpStatus.NOT_FOUND,
       );
     }
 
-    if (existCategoryPost.isHaveChildren) {
+    if (existCategoryBlog.isHaveChildren) {
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,
@@ -385,7 +385,7 @@ export class CategoryPostService {
 
     const blogInCategory = await this.blogRepository.findOne({
       where: {
-        categoryPostId: id,
+        categoryBlogId: id,
         status: EBlogStatus.PUBLISH,
       },
     });
@@ -400,27 +400,27 @@ export class CategoryPostService {
       );
     }
 
-    if (existCategoryPost.parentId) {
-      const parent: any = await this.categoryPostRepository
+    if (existCategoryBlog.parentId) {
+      const parent: any = await this.categoryBlogRepository
         .createQueryBuilder('category')
         .leftJoinAndMapMany(
           'category.children',
-          CategoryPost,
+          CategoryBlog,
           'category_children',
           'category.id = category_children.parentId',
         )
-        .where('"category"."id" = :parentId', { parentId: existCategoryPost.parentId })
+        .where('"category"."id" = :parentId', { parentId: existCategoryBlog.parentId })
         .andWhere('"category"."deletedAt" is null')
         .andWhere('"category_children"."deletedAt" is null')
         .getOne();
       if (parent.children.length === 1) {
         parent.isHaveChildren = false;
-        await this.categoryPostRepository.save(parent);
+        await this.categoryBlogRepository.save(parent);
       }
     }
 
     await this.connection.queryResultCache.clear();
-    await this.categoryPostRepository.softRemove(existCategoryPost);
+    await this.categoryBlogRepository.softRemove(existCategoryBlog);
     return { data: 'success' };
   }
 }

@@ -7,7 +7,7 @@ export class Blog {
   id: string;
 
   @Column('uuid')
-  categoryPostId: string;
+  categoryBlogId: string;
 
   @Column('varchar')
   title: string;
@@ -103,8 +103,10 @@ export class Blog {
     if (object.content !== undefined) this.content = object.content;
     if (object.type !== undefined) this.type = object.type;
     if (object.authorId) this.authorId = object.authorId;
+    if (object.categoryBlogId) this.categoryBlogId = object.categoryBlogId;
     if (object.createdBy) this.createdBy = object.createdBy;
     if (object.status === true || object.status === false) this.status = object.status;
     if (object.metaDescription !== undefined) this.metaDescription = object.metaDescription;
+    if (object.timePublication || object.timePublication === null) this.timePublication = object.timePublication;
   }
 }

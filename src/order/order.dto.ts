@@ -81,10 +81,10 @@ class OrderDetail {
   readonly inStock?: number;
 
   @ApiProperty({ type: [ImageProductVariant], required: false })
-  readonly image?: ImageProductVariant[];
+  readonly images?: ImageProductVariant[];
 
   @ApiProperty({ type: [ToppingProduct], required: false })
-  readonly topping?: ToppingProduct[];
+  readonly toppings?: ToppingProduct[];
 }
 
 export class CreateOrderInput {

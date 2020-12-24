@@ -1,11 +1,26 @@
-import { Controller, Param, UseFilters, Get, Post, Body, Delete, Put, UseGuards, Query } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  Controller,
+  Param,
+  UseFilters,
+  Get,
+  Post,
+  Body,
+  Delete,
+  Put,
+  UseGuards,
+  Query,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ProductService } from './product.service';
 import { HttpExceptionFilter } from '../exception/httpException.filter';
 import {
   CreateManyProductInput,
   CreateProductInput,
   CreateProductVariantInput,
+  FileUploadInput,
+  FilterProductAdminInput,
   UpdateProductInput,
   UpdateProductVariantInput,
 } from './product.dto';
@@ -19,6 +34,8 @@ import { OptionalGuard } from '../auth/optional.guard';
 import { GetUser } from '../auth/get-user.decorator';
 import { CheckUnSignIntPipe } from '../lib/validatePipe/checkIntegerPipe.class';
 import { ConvertArray } from '../lib/validatePipe/convertArrayPipe.class';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { FilterProductAdminPipe } from '../lib/validatePipe/product/filterProductAdminPipe.class';
 
 @Controller('product')
 @ApiTags('Product')
@@ -60,12 +77,23 @@ export class ProductController {
     return await this.productService.filterProduct(searchValue, userId, categoryId, page, limit);
   }
 
+  @Post('upload-image-product')
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    type: FileUploadInput,
+  })
+  async uploadImage(@UploadedFile() image: any) {
+    return await this.productService.uploadImage(image);
+  }
+
   @Post()
   async createProduct(@Body(new CreateProductPipe()) createProductInput: CreateProductInput) {
     return await this.productService.createProduct(createProductInput);
   }
 
-  @Post('/create-many-product')
+  @Post('create-many-product')
   async createManyProduct(@Body(new CreateManyProductPipe()) createManyProductInput: CreateManyProductInput) {
     return await this.productService.createManyProduct(createManyProductInput);
   }
@@ -101,5 +129,10 @@ export class ProductController {
   @Delete('/delete-product-variant/:id')
   async deleteProductVariant(@Param('id', new CheckUUID()) id: string) {
     return await this.productService.deleteProductVariant(id);
+  }
+
+  @Post('admin/filter-product')
+  async filterProductAdmin(@Body(new FilterProductAdminPipe()) filterProductAdminInput: FilterProductAdminInput) {
+    return await this.productService.filterProductAdmin(filterProductAdminInput);
   }
 }

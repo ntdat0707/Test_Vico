@@ -1,11 +1,11 @@
 import { PipeTransform, Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { UpdateCategoryPostInput } from '../../../category-post/category-post.dto';
-import { checkUUID } from '../../../lib/pipeUtils/uuidValidate';
-import { checkSlug } from '../../../lib/pipeUtils/slugValidate';
+import { UpdateCategoryBlogInput } from '../../../category-blog/category-blog.dto';
+import { checkUUID } from '../../pipeUtils/uuidValidate';
+import { checkSlug } from '../../pipeUtils/slugValidate';
 
 @Injectable()
-export class UpdateCategoryPostPipe implements PipeTransform<any> {
-  async transform(value: UpdateCategoryPostInput) {
+export class UpdateCategoryBlogPipe implements PipeTransform<any> {
+  async transform(value: UpdateCategoryBlogInput) {
     if (!value.name) {
       throw new HttpException(
         {

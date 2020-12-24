@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CategoryPost } from '../entities/categoryPost.entity';
-import { CategoryPostController } from './category-post.controller';
-import { CategoryPostService } from './category-post.service';
+import { CategoryBlog } from '../entities/categoryBlog.entity';
+import { CategoryBlogController } from './category-blog.controller';
+import { CategoryBlogService } from './category-blog.service';
 import { diskStorage } from 'multer';
 import { extname, resolve, basename } from 'path';
 import * as shortid from 'shortid';
@@ -13,7 +13,7 @@ import { Blog } from '../entities/blog.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CategoryPost, Product, Category, Blog]),
+    TypeOrmModule.forFeature([CategoryBlog, Product, Category, Blog]),
     MulterModule.registerAsync({
       useFactory: () => ({
         storage: diskStorage({
@@ -34,7 +34,7 @@ import { Blog } from '../entities/blog.entity';
       }),
     }),
   ],
-  controllers: [CategoryPostController],
-  providers: [CategoryPostService],
+  controllers: [CategoryBlogController],
+  providers: [CategoryBlogService],
 })
-export class CategoryPostModule {}
+export class CategoryBlogModule {}

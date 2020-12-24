@@ -20,7 +20,7 @@ import { Blog } from '../entities/blog.entity';
 import { ProductCategory } from '../entities/productCategory.entity';
 import { ProductTopping } from '../entities/productTopping.entity';
 import { Topping } from '../entities/topping.entity';
-import { CategoryPost } from '../entities/categoryPost.entity';
+import { CategoryBlog } from '../entities/categoryBlog.entity';
 import { RoleService } from '../role/role.service';
 
 @Module({
@@ -41,12 +41,12 @@ import { RoleService } from '../role/role.service';
       ProductImage,
       ProductTopping,
       Topping,
-      CategoryPost,
+      CategoryBlog,
     ]),
     MulterModule.registerAsync({
       useFactory: () => ({
         storage: diskStorage({
-          destination: (req, file, cb) => cb(null, resolve('.', process.env.TOPPING_IMAGE_PATH)),
+          destination: (req, file, cb) => cb(null, resolve('.', process.env.PRODUCT_IMAGE_PATH)),
           filename: (req: any, file: any, cb: any) => {
             cb(
               null,

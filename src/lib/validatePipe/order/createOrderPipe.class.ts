@@ -285,9 +285,9 @@ export class CreateOrderPipe implements PipeTransform<any> {
           }
         }
 
-        if (value.orderDetails[i].topping?.length > 0) {
-          for (let j = 0; j < value.orderDetails[i].topping.length; j++) {
-            if (!value.orderDetails[i].topping[j].id) {
+        if (value.orderDetails[i].toppings?.length > 0) {
+          for (let j = 0; j < value.orderDetails[i].toppings.length; j++) {
+            if (!value.orderDetails[i].toppings[j].id) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -296,7 +296,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
                 HttpStatus.BAD_REQUEST,
               );
             }
-            if (!checkUUID(value.orderDetails[i].topping[j].id)) {
+            if (!checkUUID(value.orderDetails[i].toppings[j].id)) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -306,7 +306,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
               );
             }
 
-            if (!value.orderDetails[i].topping[j].categoryId) {
+            if (!value.orderDetails[i].toppings[j].categoryId) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -315,7 +315,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
                 HttpStatus.BAD_REQUEST,
               );
             }
-            if (!checkUUID(value.orderDetails[i].topping[j].categoryId)) {
+            if (!checkUUID(value.orderDetails[i].toppings[j].categoryId)) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -325,7 +325,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
               );
             }
 
-            if (!value.orderDetails[i].topping[j].price && value.orderDetails[i].topping[j].price !== 0) {
+            if (!value.orderDetails[i].toppings[j].price && value.orderDetails[i].toppings[j].price !== 0) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -335,8 +335,8 @@ export class CreateOrderPipe implements PipeTransform<any> {
               );
             }
             if (
-              !Number.isInteger(value.orderDetails[i].topping[j].price) &&
-              value.orderDetails[i].topping[j].price < 0
+              !Number.isInteger(value.orderDetails[i].toppings[j].price) &&
+              value.orderDetails[i].toppings[j].price < 0
             ) {
               throw new HttpException(
                 {
@@ -347,7 +347,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
               );
             }
 
-            if (!value.orderDetails[i].topping[j].inStock && value.orderDetails[i].topping[j].inStock !== 0) {
+            if (!value.orderDetails[i].toppings[j].inStock && value.orderDetails[i].toppings[j].inStock !== 0) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -357,8 +357,8 @@ export class CreateOrderPipe implements PipeTransform<any> {
               );
             }
             if (
-              !Number.isInteger(value.orderDetails[i].topping[j].inStock) &&
-              value.orderDetails[i].topping[j].inStock < 0
+              !Number.isInteger(value.orderDetails[i].toppings[j].inStock) &&
+              value.orderDetails[i].toppings[j].inStock < 0
             ) {
               throw new HttpException(
                 {

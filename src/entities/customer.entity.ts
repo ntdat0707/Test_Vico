@@ -21,7 +21,7 @@ export class Customer {
   email: string;
 
   @Column('varchar', { nullable: true })
-  phone: string;
+  phoneNumber: string;
 
   @Column('varchar')
   fullName: string;
@@ -70,7 +70,7 @@ export class Customer {
   setAttributes(object: any) {
     if (object.email) this.email = object.email;
     if (object.code) this.code = object.code;
-    if (object.phone) this.phone = object.phone;
+    if (object.phoneNumber) this.phoneNumber = object.phoneNumber;
     if (object.fullName) this.fullName = object.fullName;
     if (object.password) this.password = object.password;
     if (object.googleId !== undefined) this.googleId = object.googleId;

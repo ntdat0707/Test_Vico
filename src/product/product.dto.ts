@@ -1,5 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class FileUploadInput {
+  @ApiProperty({ type: 'string', format: 'binary' })
+  image: any;
+}
+
 export class ProductPictures {
   @ApiProperty()
   readonly picture: string;
@@ -106,6 +111,9 @@ export class CreateProductInput {
 
   @ApiProperty({ required: false })
   readonly toppingAvailable?: boolean;
+
+  @ApiProperty({ required: false })
+  readonly status?: boolean;
 
   @ApiProperty({ required: true })
   readonly numberToppingAllow: number;
@@ -291,4 +299,18 @@ export class UpdateProductVariantInput {
 
   @ApiProperty({ required: false, type: [ProductPictures] })
   readonly productPictures: ProductPictures[];
+}
+
+export class FilterProductAdminInput {
+  @ApiProperty()
+  readonly searchValue: string[];
+
+  @ApiProperty()
+  readonly categoryId: string;
+
+  @ApiProperty()
+  readonly page: number;
+
+  @ApiProperty()
+  readonly limit: number;
 }

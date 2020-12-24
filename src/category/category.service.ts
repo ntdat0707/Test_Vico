@@ -6,7 +6,7 @@ import { CreateCategoryInput, UpdateCategoryInput } from './category.dto';
 import { Product } from '../entities/product.entity';
 import { Blog } from '../entities/blog.entity';
 import { ProductCategory } from '../entities/productCategory.entity';
-import { CategoryPost } from '../entities/categoryPost.entity';
+import { CategoryBlog } from '../entities/categoryBlog.entity';
 
 @Injectable()
 export class CategoryService {
@@ -14,8 +14,8 @@ export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-    @InjectRepository(CategoryPost)
-    private categoryPostRepository: Repository<CategoryPost>,
+    @InjectRepository(CategoryBlog)
+    private categoryBlogRepository: Repository<CategoryBlog>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
     @InjectRepository(Blog)
@@ -48,12 +48,16 @@ export class CategoryService {
 
   async getCategories(page = 1, limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE)) {
     this.logger.debug(`Running api getCategories at ${new Date()}`);
-    const categoryQuery = this.categoryRepository.createQueryBuilder('category');
+    const now = new Date();
+    const categoryQuery = this.categoryRepository
+      .createQueryBuilder('category')
+      .where('category."timePublication" <=:now or category."timePublication" is null', { now: now });
     const categoryCount = await categoryQuery.cache(`category_count_page${page}_limit${limit}`).getCount();
-    const category = await categoryQuery
+    const categories = await categoryQuery
       .limit(limit)
       .offset((page - 1) * limit)
       .orderBy('category.sales', 'DESC')
+      .where('category."timePublication" <=:now or category."timePublication" is null', { now: now })
       .cache(`category_page${page}_limit${limit}`)
       .getMany();
     const pages = Math.ceil(Number(categoryCount) / limit);
@@ -62,7 +66,21 @@ export class CategoryService {
       totalPages: pages,
       limit: Number(limit),
       totalRecords: categoryCount,
-      data: category,
+      data: categories,
+    };
+  }
+
+  async getAllCategories() {
+    this.logger.debug(`Running api getAllCategories at ${new Date()}`);
+    const now = new Date();
+    const categories = await this.categoryRepository
+      .createQueryBuilder('category')
+      .orderBy('category.sales', 'DESC')
+      .where('category."timePublication" <=:now or category."timePublication" is null', { now: now })
+      .cache(`get_all_categories`)
+      .getMany();
+    return {
+      data: categories,
     };
   }
 
@@ -127,7 +145,7 @@ export class CategoryService {
       );
     }
 
-    existSlug = await this.categoryPostRepository.findOne({
+    existSlug = await this.categoryBlogRepository.findOne({
       where: {
         slug: createCategoryInput.slug,
       },
@@ -306,6 +324,18 @@ export class CategoryService {
     await this.categoryRepository.softRemove(existCategory);
     return {
       data: 'success',
+    };
+  }
+
+  async getAllCategoriesByAdmin() {
+    this.logger.debug(`Running api getAllCategoriesByAdmin at ${new Date()}`);
+    const categories = await this.categoryRepository
+      .createQueryBuilder('category')
+      .orderBy('category.sales', 'DESC')
+      .cache(`get_all_categories_by_admin`)
+      .getMany();
+    return {
+      data: categories,
     };
   }
 }

@@ -8,10 +8,12 @@ import { CategoryModule } from './category/category.module';
 import { OrderModule } from './order/order.module';
 import { AuthModule } from './auth/auth.module';
 import * as redisStore from 'cache-manager-redis-store';
-import { CategoryPostModule } from './category-post/category-post.module';
 import { ToppingModule } from './topping/topping.module';
 import { RoleModule } from './role/role.module';
 import { ShippingModule } from './shipping/shipping.module';
+import { CategoryBlogModule } from './category-blog/category-blog.module';
+import { BlogModule } from './blog/blog.module';
+import { CustomerModule } from './customer/customer.module';
 
 @Module({
   imports: [
@@ -53,9 +55,11 @@ import { ShippingModule } from './shipping/shipping.module';
     OrderModule,
     AuthModule,
     RoleModule,
-    CategoryPostModule,
+    CategoryBlogModule,
     ToppingModule,
     ShippingModule,
+    BlogModule,
+    CustomerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

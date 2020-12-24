@@ -10,10 +10,11 @@ import { Permission } from '../entities/permission.entity';
 import { PermissionRole } from '../entities/permissionRole.entity';
 import { RoleService } from '../role/role.service';
 import { Customer } from '../entities/customer.entity';
+import { Employee } from '../entities/employee.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Role, Permission, PermissionRole, Customer]),
+    TypeOrmModule.forFeature([Role, Permission, PermissionRole, Customer, Employee]),
     // PassportModule.register({ defaultStrategy: 'JwtStrategy' }),
     JwtModule.registerAsync({
       useClass: JwtConfig,

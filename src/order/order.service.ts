@@ -278,7 +278,7 @@ export class OrderService {
           .andWhere('"product_variant"."deletedAt" is null')
           .getOne();
 
-        if (product.toppingAvailable === false && createOrderInput.orderDetails[i].topping?.length > 0) {
+        if (product.toppingAvailable === false && createOrderInput.orderDetails[i].toppings?.length > 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -290,10 +290,10 @@ export class OrderService {
 
         if (product.numberToppingAllow > 0) {
           let totalTopping = 0;
-          for (let j = 0; j < createOrderInput.orderDetails[i].topping?.length; j++) {
+          for (let j = 0; j < createOrderInput.orderDetails[i].toppings?.length; j++) {
             const existProductTopping = await this.productToppingRepository.findOne({
               productId: product.id,
-              toppingId: createOrderInput.orderDetails[i].topping[j].id,
+              toppingId: createOrderInput.orderDetails[i].toppings[j].id,
             });
             if (!existProductTopping) {
               throw new HttpException(
@@ -304,7 +304,7 @@ export class OrderService {
                 HttpStatus.BAD_REQUEST,
               );
             }
-            totalTopping += createOrderInput.orderDetails[i].topping[j].quantity;
+            totalTopping += createOrderInput.orderDetails[i].toppings[j].quantity;
           }
           if (totalTopping > product.numberToppingAllow) {
             throw new HttpException(
@@ -347,7 +347,7 @@ export class OrderService {
           .andWhere('"product_variant"."deletedAt" is null')
           .getOne();
 
-        if (existProduct.toppingAvailable === false && createOrderInput.orderDetails[i].topping?.length > 0) {
+        if (existProduct.toppingAvailable === false && createOrderInput.orderDetails[i].toppings?.length > 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -356,12 +356,12 @@ export class OrderService {
             HttpStatus.BAD_REQUEST,
           );
         }
-        if (createOrderInput.orderDetails[i].topping?.length > 0) {
-          for (let j = 0; j < createOrderInput.orderDetails[i].topping.length; j++) {
+        if (createOrderInput.orderDetails[i].toppings?.length > 0) {
+          for (let j = 0; j < createOrderInput.orderDetails[i].toppings.length; j++) {
             const existTopping = await this.toppingRepository.findOne({
               where: {
-                id: createOrderInput.orderDetails[i].topping[j].id,
-                categoryId: createOrderInput.orderDetails[i].topping[j].categoryId,
+                id: createOrderInput.orderDetails[i].toppings[j].id,
+                categoryId: createOrderInput.orderDetails[i].toppings[j].categoryId,
               },
             });
             if (!existTopping) {
@@ -374,7 +374,7 @@ export class OrderService {
               );
             }
 
-            if (existTopping.price !== createOrderInput.orderDetails[i].topping[j].price) {
+            if (existTopping.price !== createOrderInput.orderDetails[i].toppings[j].price) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -385,15 +385,15 @@ export class OrderService {
             }
             totalPrice =
               totalPrice +
-              createOrderInput.orderDetails[i].topping[j].price *
-                createOrderInput.orderDetails[i].topping[j].quantity *
+              createOrderInput.orderDetails[i].toppings[j].price *
+                createOrderInput.orderDetails[i].toppings[j].quantity *
                 createOrderInput.orderDetails[i].quantity;
 
             isInArrUpdate = false;
             for (let k = 0; k < arrUpdateStockTopping.length; k++) {
               if (arrUpdateStockTopping[k].id === existTopping.id) {
                 arrUpdateStockTopping[k].inStock -=
-                  createOrderInput.orderDetails[i].topping[i].quantity * createOrderInput.orderDetails[i].quantity;
+                  createOrderInput.orderDetails[i].toppings[i].quantity * createOrderInput.orderDetails[i].quantity;
                 if (arrUpdateStockTopping[k].inStock < 0) {
                   throw new HttpException(
                     {
@@ -409,7 +409,7 @@ export class OrderService {
             }
             if (isInArrUpdate === false) {
               existTopping.inStock -=
-                createOrderInput.orderDetails[i].topping[i].quantity * createOrderInput.orderDetails[i].quantity;
+                createOrderInput.orderDetails[i].toppings[i].quantity * createOrderInput.orderDetails[i].quantity;
               if (existTopping.inStock < 0) {
                 throw new HttpException(
                   {
@@ -575,12 +575,12 @@ export class OrderService {
           newOrderDetail.setAttributes(createOrderInput.orderDetails[i]);
           newOrderDetail.orderId = newOrder.id;
           newOrderDetail = await transactionalEntityManager.save<OrderDetail>(newOrderDetail);
-          for (let j = 0; j < createOrderInput.orderDetails[i].topping?.length; j++) {
+          for (let j = 0; j < createOrderInput.orderDetails[i].toppings?.length; j++) {
             newOrderDetailTopping = new OrderDetailTopping();
-            newOrderDetailTopping.toppingId = createOrderInput.orderDetails[i].topping[j].id;
+            newOrderDetailTopping.toppingId = createOrderInput.orderDetails[i].toppings[j].id;
             newOrderDetailTopping.quantity =
-              createOrderInput.orderDetails[i].topping[j].quantity * createOrderInput.orderDetails[i].quantity;
-            newOrderDetailTopping.unitPrice = createOrderInput.orderDetails[i].topping[j].price;
+              createOrderInput.orderDetails[i].toppings[j].quantity * createOrderInput.orderDetails[i].quantity;
+            newOrderDetailTopping.unitPrice = createOrderInput.orderDetails[i].toppings[j].price;
             newOrderDetailTopping.orderDetailId = newOrderDetail.id;
             arrOrderDetailTopping.push(newOrderDetailTopping);
           }

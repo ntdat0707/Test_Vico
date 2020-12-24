@@ -73,4 +73,14 @@ export class CategoryController {
   async deleteCategoryDuplicate(@Param('id', new CheckUUID()) id: string) {
     return await this.categoryService.deleteCategory(id);
   }
+
+  @Get('get-all/categories')
+  async getAllCategories() {
+    return await this.categoryService.getAllCategories();
+  }
+
+  @Get('admin/get-all/categories')
+  async getAllCategoriesByAdmin() {
+    return await this.categoryService.getAllCategoriesByAdmin();
+  }
 }

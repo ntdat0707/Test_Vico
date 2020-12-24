@@ -7,6 +7,7 @@ import {
   CreateManyProductInput,
   CreateProductInput,
   CreateProductVariantInput,
+  FilterProductAdminInput,
   UpdateProductInput,
   UpdateProductVariantInput,
 } from './product.dto';
@@ -18,7 +19,7 @@ import { Blog } from '../entities/blog.entity';
 import { ProductTopping } from '../entities/productTopping.entity';
 import { Topping } from '../entities/topping.entity';
 import { OrderDetail } from '../entities/orderDetail.entity';
-import { CategoryPost } from '../entities/categoryPost.entity';
+import { CategoryBlog } from '../entities/categoryBlog.entity';
 import { convertTv } from '../lib/utils';
 
 @Injectable()
@@ -29,8 +30,8 @@ export class ProductService {
     private productRepository: Repository<Product>,
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-    @InjectRepository(CategoryPost)
-    private categoryPostRepository: Repository<CategoryPost>,
+    @InjectRepository(CategoryBlog)
+    private categoryBlogRepository: Repository<CategoryBlog>,
     @InjectRepository(ProductCategory)
     private productCategoryRepository: Repository<ProductCategory>,
     @InjectRepository(ProductImage)
@@ -47,6 +48,23 @@ export class ProductService {
     private toppingRepository: Repository<Topping>,
     private connection: Connection,
   ) {}
+
+  async uploadImage(image: any) {
+    if (!image) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'IMAGE_REQUIRED',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return {
+      data: {
+        picture: image.filename,
+      },
+    };
+  }
 
   async getProduct(id: string) {
     this.logger.warn(`Running api getProduct at ${new Date()}`);
@@ -196,7 +214,7 @@ export class ProductService {
       );
     }
 
-    existSlug = await this.categoryPostRepository.findOne({
+    existSlug = await this.categoryBlogRepository.findOne({
       where: {
         slug: createProductInput.slug,
       },
@@ -287,6 +305,7 @@ export class ProductService {
           newImageProduct.productId = newProduct.id;
           newImageProduct.setAttributes(productPictures);
           newImageProduct.position = productPictures.position ? productPictures.position : i + 1;
+          newImageProduct.isAvatar = i === 0 ? true : false;
           arrImageProduct.push(newImageProduct);
         }
       }
@@ -349,7 +368,7 @@ export class ProductService {
       );
     }
 
-    existSlug = await this.categoryPostRepository.findOne({
+    existSlug = await this.categoryBlogRepository.findOne({
       where: {
         slug: createManyProductInput.slug,
       },
@@ -438,13 +457,12 @@ export class ProductService {
       await transactionalEntityManager.save<ProductCategory[]>(arrProductCategory);
       if (createManyProductInput.productPictures?.length > 0) {
         for (let i = 0; i < createManyProductInput.productPictures.length; i++) {
+          const productPictures = createManyProductInput.productPictures[i];
           newImageProduct = new ProductImage();
           newImageProduct.productId = newProduct.id;
-          newImageProduct.picture = createManyProductInput.productPictures[i].picture;
-          newImageProduct.alt = createManyProductInput.productPictures[i].alt;
-          newImageProduct.position = createManyProductInput.productPictures[i].position
-            ? createManyProductInput.productPictures[i].position
-            : i + 1;
+          newImageProduct.setAttributes(productPictures);
+          newImageProduct.position = productPictures.position ? productPictures.position : i + 1;
+          newImageProduct.isAvatar = i === 0 ? true : false;
           arrImageProduct.push(newImageProduct);
         }
         await transactionalEntityManager.save<ProductImage>(arrImageProduct);
@@ -636,7 +654,7 @@ export class ProductService {
           HttpStatus.BAD_REQUEST,
         );
       }
-      existSlug = await this.categoryPostRepository.findOne({
+      existSlug = await this.categoryBlogRepository.findOne({
         slug: updateProductInput.slug,
       });
       if (existSlug) {
@@ -1052,6 +1070,7 @@ export class ProductService {
     const product = await productQuery
       .where('slugs::text like :slug', { slug: `%"${slug}"%` })
       .andWhere('"product"."status" = true')
+      .andWhere('(product."timePublication" <=:now or product."timePublication" is null)', { now: new Date() })
       .cache(`${cacheKey}${slug}`, 30000)
       .getOne();
 
@@ -1078,7 +1097,99 @@ export class ProductService {
     limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE),
   ) {
     let cacheKey = 'filter_product';
+    const now = new Date();
+    const status = true;
+    const productQuery = this.productRepository
+      .createQueryBuilder('product')
+      .where('(product."timePublication" <=:now or product."timePublication" is null)', { now: now })
+      .limit(limit)
+      .offset((page - 1) * limit);
 
+    const countQuery: any = this.productRepository
+      .createQueryBuilder('product')
+      .where('(product."timePublication" <=:now or product."timePublication" is null)', { now: now });
+
+    let newSearchValue = [];
+    let searchValueJoin = '';
+
+    if (searchValue?.length > 0) {
+      for (let i = 0; i < searchValue.length; i++) {
+        searchValue[i] = searchValue[i].replace(/  +/g, '');
+        if (searchValue[i]) {
+          newSearchValue.push(convertTv(searchValue[i].trim()));
+        }
+      }
+      searchValueJoin = `%${newSearchValue.join(' ')}%`;
+      cacheKey += `searchValue${searchValueJoin}`;
+      const bracket = new Brackets(qb => {
+        qb.orWhere(`LOWER(convertTVkdau("name")) like '${searchValueJoin}'`);
+        qb.orWhere(`LOWER(convertTVkdau("itemCode")) like '${searchValueJoin}'`);
+      });
+      productQuery.andWhere(bracket);
+      countQuery.andWhere(bracket);
+    }
+
+    if (categoryId) {
+      cacheKey += `categoryId${categoryId}`;
+      const categoryQuery = this.productCategoryRepository
+        .createQueryBuilder('product_category')
+        .where('product_category."categoryId"=:categoryId');
+
+      countQuery.innerJoin(
+        `(${categoryQuery.getQuery()})`,
+        'product_category',
+        '"product_category"."product_category_productId"=product.id',
+      );
+      productQuery.innerJoin(
+        `(${categoryQuery.getQuery()})`,
+        'product_category',
+        '"product_category"."product_category_productId"=product.id',
+      );
+    }
+
+    let count: any = 0;
+    count = await countQuery
+      .setParameters({ searchValueJoin, status, categoryId, now })
+      .cache(cacheKey, 30000)
+      .getCount();
+
+    const products = await this.productRepository
+      .createQueryBuilder('products')
+      .select('products.id')
+      .addSelect('products.name')
+      .addSelect('products.slugs')
+      .addSelect('products.itemCode')
+      .addSelect('products.price')
+      .addSelect('products.inStock')
+      .addSelect('products.sellOutOfStock')
+      .innerJoin(`(${productQuery.getQuery()})`, 'product', '"product"."product_id"=products.id')
+      .leftJoinAndMapOne(
+        'products.image',
+        ProductImage,
+        'product_image',
+        'products.id=product_image."productId" and product_image."isAvatar"=true',
+      )
+      .setParameters({ searchValueJoin, status, categoryId, now })
+      .cache(`${cacheKey}_limit${limit}_page${page}`, 30000)
+      .getMany();
+
+    const pages = Math.ceil(Number(count) / limit);
+
+    return {
+      page: Number(page),
+      totalPages: pages,
+      limit: Number(limit),
+      totalRecords: count,
+      data: products,
+    };
+  }
+
+  async filterProductAdmin(filterProductAdminInput: FilterProductAdminInput) {
+    let cacheKey = 'filter_product_admin';
+    const page = filterProductAdminInput.page || 1;
+    const limit = filterProductAdminInput.limit || parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE);
+    const categoryId = filterProductAdminInput.categoryId;
+    const searchValue = filterProductAdminInput.searchValue;
     const status = true;
     const productQuery = this.productRepository
       .createQueryBuilder('product')
@@ -1133,19 +1244,24 @@ export class ProductService {
 
     const products = await this.productRepository
       .createQueryBuilder('products')
-      .select('products.id')
-      .addSelect('products.name')
-      .addSelect('products.slugs')
-      .addSelect('products.itemCode')
-      .addSelect('products.price')
-      .addSelect('products.inStock')
-      .addSelect('products.sellOutOfStock')
       .innerJoin(`(${productQuery.getQuery()})`, 'product', '"product"."product_id"=products.id')
       .leftJoinAndMapOne(
         'products.image',
         ProductImage,
         'product_image',
         'products.id=product_image."productId" and product_image."isAvatar"=true',
+      )
+      .innerJoinAndMapMany(
+        'products.productVariants',
+        ProductVariant,
+        'product_variant',
+        'products.id=product_variant."productId"',
+      )
+      .leftJoinAndMapMany(
+        'products.productToppings',
+        ProductTopping,
+        'product_topping',
+        'products.id=product_topping."productId"',
       )
       .setParameters({ searchValueJoin, status, categoryId })
       .cache(`${cacheKey}_limit${limit}_page${page}`, 30000)

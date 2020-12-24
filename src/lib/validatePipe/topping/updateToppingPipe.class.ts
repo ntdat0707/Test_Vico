@@ -1,5 +1,5 @@
 import { PipeTransform, Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { CreateToppingInput, UpdateToppingInput } from '../../../topping/topping.dto';
+import { UpdateToppingInput } from '../../../topping/topping.dto';
 import { isTrueSet } from '../../../lib/pipeUtils/isTrueSet';
 import { checkUUID } from '../../../lib/pipeUtils/uuidValidate';
 import { checkInteger } from '../../../lib/pipeUtils/integerValidate';

@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, getManager, Between, Connection } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { LoginCustomerInput, RefreshTokenInput, RegisterAccountInput } from './auth.dto';
+import { LoginCustomerInput, LoginManagerInput, RefreshTokenInput, RegisterAccountInput } from './auth.dto';
 import { HttpExceptionFilter } from '../exception/httpException.filter';
 import * as jwt from 'jsonwebtoken';
 import moment = require('moment');
@@ -11,22 +11,29 @@ import { Role } from '../entities/role.entity';
 import { Customer } from '../entities/customer.entity';
 import { AuthPayload } from './payload';
 import { jwtConstants } from './constants';
+import { Employee } from '../entities/employee.entity';
 
 @UseFilters(new HttpExceptionFilter())
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(Role) private userGroupRepository: Repository<Role>,
+    @InjectRepository(Role) private roleRepository: Repository<Role>,
     @InjectRepository(Customer) private customerRepository: Repository<Customer>,
+    @InjectRepository(Employee) private employeeRepository: Repository<Employee>,
     private jwtService: JwtService,
     private connection: Connection,
   ) {}
 
   async verifyTokenClaims(payload: AuthPayload) {
-    const user = await this.customerRepository.findOne({
+    const customer = await this.customerRepository.findOne({
       where: { id: payload.id, email: payload.email, code: payload.code },
     });
-    if (!user) return false;
+    if (!customer) {
+      const employee = await this.employeeRepository.findOne({
+        where: { id: payload.id, email: payload.email, roleId: payload.roleId },
+      });
+      if (!employee) return false;
+    }
     return true;
   }
 
@@ -178,5 +185,45 @@ export class AuthService {
         HttpStatus.UNAUTHORIZED,
       );
     }
+  }
+
+  async loginManager(loginManagerInput: LoginManagerInput) {
+    const refreshTokenExpireIn = process.env.REFRESH_TOKEN_EXPIRE_IN || '7d';
+    const employee = await this.employeeRepository.findOne({ where: { email: loginManagerInput.email } });
+    if (!employee) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'EMPLOYEE_NOT_EXIST',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const passwordIsValid = bcrypt.compareSync(loginManagerInput.password, employee.password);
+    if (!passwordIsValid) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          message: 'INCORRECT_PASSWORD',
+        },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    const payloadToken = { id: employee.id, email: employee.email, roleId: employee.roleId };
+    const token = this.jwtService.sign(payloadToken);
+
+    const payloadRefreshToken = {
+      id: employee.id,
+      email: employee.email,
+      roleId: employee.roleId,
+      token: token,
+    };
+    const refreshToken = jwt.sign(payloadRefreshToken, jwtConstants.secret, {
+      expiresIn: refreshTokenExpireIn,
+    });
+
+    return { employeeId: employee.id, token: token, refreshToken: refreshToken };
   }
 }

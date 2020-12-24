@@ -116,9 +116,6 @@ export class LoginManagerInput {
 
   @ApiProperty()
   readonly password: string;
-
-  @ApiProperty({ required: false })
-  readonly ip: string;
 }
 
 export class FilterLogInput {

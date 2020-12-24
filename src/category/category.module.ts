@@ -13,7 +13,7 @@ import { PermissionRole } from '../entities/permissionRole.entity';
 import * as shortid from 'shortid';
 import { Blog } from '../entities/blog.entity';
 import { ProductCategory } from '../entities/productCategory.entity';
-import { CategoryPost } from '../entities/categoryPost.entity';
+import { CategoryBlog } from '../entities/categoryBlog.entity';
 import { RoleService } from '../role/role.service';
 
 @Module({
@@ -26,7 +26,7 @@ import { RoleService } from '../role/role.service';
       PermissionRole,
       Blog,
       ProductCategory,
-      CategoryPost,
+      CategoryBlog,
     ]),
     MulterModule.registerAsync({
       useFactory: () => ({
