@@ -12,7 +12,7 @@ import { Permission } from '../entities/permission.entity';
 import { PermissionRole } from '../entities/permissionRole.entity';
 import * as shortid from 'shortid';
 import { Category } from '../entities/category.entity';
-import { ProductTopping } from 'src/entities/productTopping.entity';
+import { ProductTopping } from '../entities/productTopping.entity';
 
 @Module({
   imports: [

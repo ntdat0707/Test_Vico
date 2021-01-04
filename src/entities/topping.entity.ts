@@ -4,9 +4,6 @@ export class Topping {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('uuid')
-  categoryId: string;
-
   @Column('varchar')
   name: string;
 
@@ -35,7 +32,6 @@ export class Topping {
   deletedAt: Date;
 
   setAttributes(object: any) {
-    if (object.categoryId) this.categoryId = object.categoryId;
     if (object.name) this.name = object.name;
     if (object.price || object.price === 0) this.price = parseInt(object.price);
     if (object.price !== undefined) this.unit = object.unit;

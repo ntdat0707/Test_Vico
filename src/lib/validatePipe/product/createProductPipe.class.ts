@@ -7,6 +7,16 @@ import { checkSlug } from '../../../lib/pipeUtils/slugValidate';
 @Injectable()
 export class CreateProductPipe implements PipeTransform<any> {
   async transform(value: CreateProductInput) {
+    if (!value.categoryIds || !Array.isArray(value.categoryIds) || value.categoryIds.length === 0) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'CATEGORY_REQUIRED',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     if (!value.name) {
       throw new HttpException(
         {
@@ -75,17 +85,9 @@ export class CreateProductPipe implements PipeTransform<any> {
         HttpStatus.BAD_REQUEST,
       );
     }
-    if (!value.categoryIds || value.categoryIds.length === 0) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: 'CATEGORY_ID_REQUIRED',
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    for (let i = 0; i < value.categoryIds.length; i++) {
-      if (!checkUUID(value.categoryIds[i])) {
+
+    for (const categoryId of value.categoryIds) {
+      if (!checkUUID(categoryId)) {
         throw new HttpException(
           {
             statusCode: HttpStatus.BAD_REQUEST,
@@ -117,8 +119,8 @@ export class CreateProductPipe implements PipeTransform<any> {
           HttpStatus.BAD_REQUEST,
         );
       }
-      for (let i = 0; i < value.productPictures.length; i++) {
-        if (!value.productPictures[i].picture) {
+      for (const productPicture of value.productPictures) {
+        if (!productPicture.picture) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -164,9 +166,9 @@ export class CreateProductPipe implements PipeTransform<any> {
         );
       }
     }
-    if (value.toppingIds && value.toppingIds.length > 0) {
-      for (let i = 0; i < value.toppingIds.length; i++) {
-        if (!checkUUID(value.toppingIds[i])) {
+    if (value.toppingIds?.length > 0) {
+      for (const toppingId of value.toppingIds) {
+        if (!checkUUID(toppingId)) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,

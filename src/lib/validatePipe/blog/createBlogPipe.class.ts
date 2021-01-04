@@ -6,6 +6,16 @@ import moment = require('moment');
 @Injectable()
 export class CreateBlogPipe implements PipeTransform<any> {
   async transform(value: CreateBlogInput) {
+    if (!value.shortDescription) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'SHORT_DESCRIPTION_REQUIRED',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     if (!value.title) {
       throw new HttpException(
         {

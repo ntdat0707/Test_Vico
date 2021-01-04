@@ -6,8 +6,8 @@ import { FilterBlogInput } from '../../../blog/blog.dto';
 export class FilterBlogPipe implements PipeTransform<any> {
   async transform(value: FilterBlogInput) {
     if (value.categoryBlogs?.length > 0) {
-      for (let i = 0; i < value.categoryBlogs.length; i++) {
-        if (!checkUUID(value.categoryBlogs[i])) {
+      for (const categoryBlogId of value.categoryBlogs) {
+        if (!checkUUID(categoryBlogId)) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,

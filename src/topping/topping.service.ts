@@ -4,7 +4,7 @@ import { Topping } from '../entities/topping.entity';
 import { Connection, Not, Repository } from 'typeorm';
 import { CreateToppingInput, UpdateToppingInput } from './topping.dto';
 import { Category } from '../entities/category.entity';
-import { ProductTopping } from 'src/entities/productTopping.entity';
+import { ProductTopping } from '../entities/productTopping.entity';
 
 @Injectable()
 export class ToppingService {
@@ -18,7 +18,7 @@ export class ToppingService {
   ) {}
 
   async getToppingById(id: string) {
-    this.logger.warn(`Running api getToppingById at ${new Date()}`);
+    this.logger.debug(`Running api getToppingById at ${new Date()}`);
     const topping = await this.toppingRepository.findOne({
       where: {
         id: id,
@@ -39,7 +39,7 @@ export class ToppingService {
   }
 
   async getToppingByProduct(id: string) {
-    this.logger.warn(`Running api getToppingByProduct at ${new Date()}`);
+    this.logger.debug(`Running api getToppingByProduct at ${new Date()}`);
 
     const topping = await this.toppingRepository
       .createQueryBuilder('topping')
@@ -57,7 +57,7 @@ export class ToppingService {
   }
 
   async getToppings(page = 1, limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE)) {
-    this.logger.warn(`Running api getToppings at ${new Date()}`);
+    this.logger.debug(`Running api getToppings at ${new Date()}`);
     const toppingQuery = this.toppingRepository.createQueryBuilder('topping');
     const toppingCount = await toppingQuery.cache(`topping_count_page${page}_limit${limit}`).getCount();
     const topping = await toppingQuery
@@ -76,7 +76,7 @@ export class ToppingService {
   }
 
   async createTopping(toppingPicture: any, createToppingInput: CreateToppingInput) {
-    this.logger.warn(`Running api createTopping at ${new Date()}`);
+    this.logger.debug(`Running api createTopping at ${new Date()}`);
     const existTopping = await this.toppingRepository.findOne({
       where: {
         name: createToppingInput.name,
@@ -92,34 +92,6 @@ export class ToppingService {
       );
     }
 
-    const existCategory = await this.categoryRepository.findOne({
-      where: {
-        id: createToppingInput.categoryId,
-        isProduct: false,
-        status: true,
-      },
-    });
-
-    if (!existCategory) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'CATEGORY_NOT_EXIST',
-        },
-        HttpStatus.NOT_FOUND,
-      );
-    }
-
-    if (existCategory.isProduct) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: 'CATEGORY_IS_OF_PRODUCT',
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
     let newTopping = new Topping();
     newTopping.setAttributes(createToppingInput);
 
@@ -132,7 +104,7 @@ export class ToppingService {
   }
 
   async updateTopping(id: string, toppingPicture: any, updateToppingInput: UpdateToppingInput) {
-    this.logger.warn(`Running api updateTopping at ${new Date()}`);
+    this.logger.debug(`Running api updateTopping at ${new Date()}`);
     const existTopping = await this.toppingRepository.findOne({
       where: {
         id: id,
@@ -164,25 +136,6 @@ export class ToppingService {
       );
     }
 
-    if (existTopping.categoryId !== updateToppingInput.categoryId) {
-      const existCategory = await this.categoryRepository.findOne({
-        where: {
-          id: updateToppingInput.categoryId,
-          isProduct: false,
-          status: true,
-        },
-      });
-      if (!existCategory) {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.NOT_FOUND,
-            message: 'CATEGORY_ID_NOT_EXIST',
-          },
-          HttpStatus.NOT_FOUND,
-        );
-      }
-    }
-
     existTopping.setAttributes(updateToppingInput);
     if (toppingPicture) {
       existTopping.picture = toppingPicture.filename;
@@ -193,7 +146,7 @@ export class ToppingService {
   }
 
   async deleteTopping(id: string) {
-    this.logger.warn(`Running api deleteTopping at ${new Date()}`);
+    this.logger.debug(`Running api deleteTopping at ${new Date()}`);
     const existTopping = await this.toppingRepository.findOne({
       where: {
         id: id,

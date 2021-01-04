@@ -62,7 +62,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
       }
     }
 
-    if (!value.categoryIds || value.categoryIds.length === 0) {
+    if (!value.categoryIds || value.categoryIds.length === 0 || !Array.isArray(value.categoryIds)) {
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,
@@ -72,12 +72,12 @@ export class CreateManyProductPipe implements PipeTransform<any> {
       );
     }
 
-    for (let i = 0; i < value.categoryIds.length; i++) {
-      if (!checkUUID(value.categoryIds[i])) {
+    for (const categoryId of value.categoryIds) {
+      if (!checkUUID(categoryId)) {
         throw new HttpException(
           {
             statusCode: HttpStatus.BAD_REQUEST,
-            message: 'CATEGORY_ID_NOT_VALID',
+            message: 'CATEGORY_ID_INVALID',
           },
           HttpStatus.BAD_REQUEST,
         );
@@ -107,13 +107,13 @@ export class CreateManyProductPipe implements PipeTransform<any> {
       }
     }
 
-    if (value.toppingIds && value.toppingIds.length > 0) {
-      for (let i = 0; i < value.toppingIds.length; i++) {
-        if (!checkUUID(value.toppingIds[i])) {
+    if (value.toppingIds?.length > 0) {
+      for (const toppingId of value.toppingIds) {
+        if (!checkUUID(toppingId)) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
-              message: 'TOPPING_INVALID',
+              message: 'TOPPING_ID_INVALID',
             },
             HttpStatus.BAD_REQUEST,
           );
@@ -130,8 +130,23 @@ export class CreateManyProductPipe implements PipeTransform<any> {
         HttpStatus.BAD_REQUEST,
       );
     }
-    for (let i = 0; i < value.productVariants.length; i++) {
-      if (!value.productVariants[i].price) {
+
+    if (value.productPictures) {
+      for (const productPicture of value.productPictures) {
+        if (!productPicture.picture) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'PICTURE_REQUIRED',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+    }
+
+    for (const productVariant of value.productVariants) {
+      if (!productVariant.price) {
         throw new HttpException(
           {
             statusCode: HttpStatus.BAD_REQUEST,
@@ -140,7 +155,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
           HttpStatus.BAD_REQUEST,
         );
       } else {
-        if (!Number.isInteger(value.productVariants[i].price) || value.productVariants[i].price <= 0) {
+        if (!Number.isInteger(productVariant.price) || productVariant.price <= 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -151,8 +166,8 @@ export class CreateManyProductPipe implements PipeTransform<any> {
         }
       }
 
-      if (value.productVariants[i].inStock) {
-        if (!Number.isInteger(value.productVariants[i].inStock) || value.productVariants[i].inStock <= 0) {
+      if (productVariant.inStock) {
+        if (!Number.isInteger(productVariant.inStock) || productVariant.inStock <= 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -163,8 +178,8 @@ export class CreateManyProductPipe implements PipeTransform<any> {
         }
       }
 
-      if (value.productVariants[i].volume) {
-        if (!Number.isInteger(value.productVariants[i].volume) || value.productVariants[i].volume <= 0) {
+      if (productVariant.volume) {
+        if (!Number.isInteger(productVariant.volume) || productVariant.volume <= 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -175,7 +190,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
         }
       }
 
-      if (!value.productVariants[i].itemCode) {
+      if (!productVariant.itemCode) {
         throw new HttpException(
           {
             statusCode: HttpStatus.BAD_REQUEST,
@@ -186,7 +201,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
       }
 
       if (value.productPictures) {
-        if (!value.productVariants[i].avatar) {
+        if (!productVariant.avatar) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -195,23 +210,12 @@ export class CreateManyProductPipe implements PipeTransform<any> {
             HttpStatus.BAD_REQUEST,
           );
         }
-        for (let j = 0; j < value.productPictures.length; j++) {
-          if (!value.productPictures[j].picture) {
-            throw new HttpException(
-              {
-                statusCode: HttpStatus.BAD_REQUEST,
-                message: 'PICTURE_REQUIRED',
-              },
-              HttpStatus.BAD_REQUEST,
-            );
-          }
-        }
       }
 
-      if (value.productVariants[i].flavor && value.productVariants[i].volume) {
+      if (productVariant.flavor && productVariant.volume) {
         const object = {};
-        object['volume'] = value.productVariants[i].volume;
-        object['flavor'] = value.productVariants[i].flavor;
+        object['volume'] = productVariant.volume;
+        object['flavor'] = productVariant.flavor;
         arrVolumeFlavor.push(object);
         const arr = _.uniqWith(arrVolumeFlavor, _.isEqual);
         if (arr.length !== arrVolumeFlavor.length) {
@@ -224,11 +228,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
           );
         }
       } else {
-        if (
-          value.productVariants[i].volume &&
-          !value.productVariants[i].flavor &&
-          arrVolume.includes(value.productVariants[i].volume)
-        ) {
+        if (productVariant.volume && !productVariant.flavor && arrVolume.includes(productVariant.volume)) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -237,11 +237,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
             HttpStatus.BAD_REQUEST,
           );
         }
-        if (
-          !value.productVariants[i].volume &&
-          value.productVariants[i].flavor &&
-          arrFlavor.includes(value.productVariants[i].flavor)
-        ) {
+        if (!productVariant.volume && productVariant.flavor && arrFlavor.includes(productVariant.flavor)) {
           throw new HttpException(
             {
               statusCode: HttpStatus.CONFLICT,
@@ -251,10 +247,10 @@ export class CreateManyProductPipe implements PipeTransform<any> {
           );
         }
       }
-      arrVolume.push(value.productVariants[i].volume);
-      arrFlavor.push(value.productVariants[i].flavor);
+      arrVolume.push(productVariant.volume);
+      arrFlavor.push(productVariant.flavor);
 
-      if (arrItemCode.includes(value.productVariants[i].itemCode)) {
+      if (arrItemCode.includes(productVariant.itemCode)) {
         throw new HttpException(
           {
             statusCode: HttpStatus.CONFLICT,
@@ -263,7 +259,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
           HttpStatus.CONFLICT,
         );
       }
-      arrItemCode.push(value.productVariants[i].itemCode);
+      arrItemCode.push(productVariant.itemCode);
     }
 
     return value;

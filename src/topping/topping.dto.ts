@@ -13,9 +13,6 @@ export class CreateToppingInput {
   @ApiProperty({ required: false })
   readonly unit: string;
 
-  @ApiProperty()
-  readonly categoryId: string;
-
   @ApiProperty({ type: Date, required: false })
   readonly inStock: number;
 
@@ -35,9 +32,6 @@ export class UpdateToppingInput {
 
   @ApiProperty({ required: false })
   readonly unit: string;
-
-  @ApiProperty()
-  readonly categoryId: string;
 
   @ApiProperty({ type: Date, required: false })
   readonly inStock: number;

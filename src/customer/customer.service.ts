@@ -37,7 +37,7 @@ export class CustomerService {
     };
   }
 
-  async searchCustomer(
+  async filterCustomer(
     searchValue: string,
     page = 1,
     limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE),

@@ -54,10 +54,10 @@ export class AuthService {
     if (!passwordIsValid) {
       throw new HttpException(
         {
-          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          statusCode: HttpStatus.BAD_REQUEST,
           message: 'INCORRECT_PASSWORD',
         },
-        HttpStatus.UNPROCESSABLE_ENTITY,
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -204,10 +204,10 @@ export class AuthService {
     if (!passwordIsValid) {
       throw new HttpException(
         {
-          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          statusCode: HttpStatus.BAD_REQUEST,
           message: 'INCORRECT_PASSWORD',
         },
-        HttpStatus.UNPROCESSABLE_ENTITY,
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -225,5 +225,47 @@ export class AuthService {
     });
 
     return { employeeId: employee.id, token: token, refreshToken: refreshToken };
+  }
+
+  async refreshTokenManager(refreshTokenInput: RefreshTokenInput) {
+    const refreshTokenExpireIn = process.env.REFRESH_TOKEN_EXPIRE_IN || '7d';
+    try {
+      const refreshTokenPayload: any = jwt.verify(refreshTokenInput.refreshToken, jwtConstants.secret);
+      if (refreshTokenInput.token !== refreshTokenPayload.token) {
+        throw HttpException;
+      }
+
+      const existEmployee = await this.employeeRepository.findOne({
+        where: {
+          id: refreshTokenPayload.id,
+        },
+      });
+      if (!existEmployee) {
+        throw HttpException;
+      }
+
+      const payloadToken = { id: existEmployee.id, email: existEmployee.email, roleId: existEmployee.roleId };
+      const token = this.jwtService.sign(payloadToken);
+
+      const payloadRefreshToken = {
+        id: existEmployee.id,
+        email: existEmployee.email,
+        roleId: existEmployee.roleId,
+        token: token,
+      };
+      const refreshToken = jwt.sign(payloadRefreshToken, jwtConstants.secret, {
+        expiresIn: refreshTokenExpireIn,
+      });
+
+      return { employeeId: existEmployee.id, token: token, refreshToken: refreshToken };
+    } catch (error) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.UNAUTHORIZED,
+          message: 'INVALID_TOKEN',
+        },
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
   }
 }

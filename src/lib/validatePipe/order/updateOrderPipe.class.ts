@@ -1,6 +1,6 @@
 import { PipeTransform, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { checkUUID } from '../../pipeUtils/uuidValidate';
-import { UpdateOrderInput } from 'src/order/order.dto';
+import { UpdateOrderInput } from '../../../order/order.dto';
 const arrStatus = [0, 1, 2, 3, 4, 5];
 
 @Injectable()
@@ -10,10 +10,10 @@ export class UpdateOrderPipe implements PipeTransform<any> {
       if (!Number.isInteger(value.status) || !arrStatus.includes(value.status)) {
         throw new HttpException(
           {
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            statusCode: HttpStatus.BAD_REQUEST,
             message: 'STATUS_NOT_VALID',
           },
-          HttpStatus.UNPROCESSABLE_ENTITY,
+          HttpStatus.BAD_REQUEST,
         );
       }
     }

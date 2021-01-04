@@ -9,17 +9,29 @@ import {
   Query,
   UploadedFile,
   UseFilters,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
-import { ApiBody, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { HttpExceptionFilter } from '../exception/httpException.filter';
-import { CreateCategoryInput, UpdateCategoryInput } from './category.dto';
+import { CreateCategoryInput, SettingPositionCategoryInput, UpdateCategoryInput } from './category.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateCategoryPipe } from '../lib/validatePipe/category/createCategoryPipe.class';
 import { UpdateCategoryPipe } from '../lib/validatePipe/category/updateCategoryPipe.class';
 import { CheckUUID } from '../lib/validatePipe/uuidPipe.class';
 import { CheckUnSignIntPipe } from '../lib/validatePipe/checkIntegerPipe.class';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../role/roles.guard';
+import { Roles } from '../role/role.decorators';
+import {
+  CREATE_CATEGORY,
+  DELETE_CATEGORY,
+  GET_CATEGORIES,
+  GET_CATEGORY,
+  SETTING_POSITION_CATEGORY,
+  UPDATE_CATEGORY,
+} from '../role/codePermission';
 
 @Controller('category')
 @ApiTags('Category')
@@ -28,6 +40,9 @@ export class CategoryController {
   constructor(private categoryService: CategoryService) {}
 
   @Get(':id')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([GET_CATEGORY])
   async getCategory(@Param('id') id: string) {
     return await this.categoryService.getCategory(id);
   }
@@ -48,6 +63,9 @@ export class CategoryController {
   @ApiBody({
     type: CreateCategoryInput,
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([CREATE_CATEGORY])
   async createCategory(
     @UploadedFile() categoryPicture: any,
     @Body(new CreateCategoryPipe()) createCategoryInput: CreateCategoryInput,
@@ -61,6 +79,9 @@ export class CategoryController {
   @ApiBody({
     type: UpdateCategoryInput,
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([UPDATE_CATEGORY])
   async updateCategory(
     @Param('id', new CheckUUID()) id: string,
     @Body(new UpdateCategoryPipe()) updateCategoryInput: UpdateCategoryInput,
@@ -70,7 +91,10 @@ export class CategoryController {
   }
 
   @Delete(':id')
-  async deleteCategoryDuplicate(@Param('id', new CheckUUID()) id: string) {
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([DELETE_CATEGORY])
+  async deleteCategory(@Param('id', new CheckUUID()) id: string) {
     return await this.categoryService.deleteCategory(id);
   }
 
@@ -80,7 +104,18 @@ export class CategoryController {
   }
 
   @Get('admin/get-all/categories')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([GET_CATEGORIES])
   async getAllCategoriesByAdmin() {
     return await this.categoryService.getAllCategoriesByAdmin();
+  }
+
+  @Post('/setting-category-position')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([SETTING_POSITION_CATEGORY])
+  async settingCategoryPosition(@Body() settingPositionCategoryInput: SettingPositionCategoryInput) {
+    return await this.categoryService.settingCategoryPosition(settingPositionCategoryInput);
   }
 }

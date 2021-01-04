@@ -52,7 +52,7 @@ export class Order {
     if (object.customerId) this.customerId = object.customerId;
     if (object.source) this.source = object.source;
     if (object.shippingId) this.shippingId = object.shippingId;
-    if (object.shippingAmount) this.shippingAmount = object.shippingAmount;
+    if (object.shippingAmount || object.shippingAmount === 0) this.shippingAmount = object.shippingAmount;
     if (object.orderAmount) this.orderAmount = parseInt(object.orderAmount);
     if (object.orderQuantity) this.orderQuantity = parseInt(object.orderQuantity);
     if (object.status || object.status === 0) this.status = parseInt(object.status);

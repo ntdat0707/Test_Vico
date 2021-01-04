@@ -38,6 +38,9 @@ export class UpdateBlogInput {
 
   @ApiProperty({ required: false, type: Date })
   readonly timePublication?: string;
+
+  @ApiProperty()
+  readonly shortDescription: string;
 }
 
 export class CreateBlogInput {
@@ -67,6 +70,9 @@ export class CreateBlogInput {
 
   @ApiProperty({ required: false })
   readonly metaDescription: string;
+
+  @ApiProperty()
+  readonly shortDescription: string;
 
   @ApiProperty()
   readonly imageFeatured: string;

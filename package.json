@@ -53,7 +53,8 @@
     "rxjs": "^6.5.4",
     "shortid": "^2.2.16",
     "swagger-ui-express": "^4.1.5",
-    "typeorm": "^0.2.29"
+    "typeorm": "^0.2.29",
+    "xlsx": "^0.16.9"
   },
   "devDependencies": {
     "@nestjs/cli": "^7.5.3",

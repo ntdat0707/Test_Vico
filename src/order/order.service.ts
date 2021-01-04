@@ -16,8 +16,8 @@ import { OrderDetailTopping } from '../entities/orderDetailTopping.entity';
 import { Customer } from '../entities/customer.entity';
 import { ProductImage } from '../entities/productImage.entity';
 import { mapDataOrder } from '../lib/mapData/mapDataOrder';
-import { convertTv } from 'src/lib/utils';
-import { ProductTopping } from 'src/entities/productTopping.entity';
+import { convertTv } from '../lib/utils';
+import { ProductTopping } from '../entities/productTopping.entity';
 
 @Injectable()
 export class OrderService {
@@ -45,7 +45,7 @@ export class OrderService {
   ) {}
 
   async getOrders(page = 1, limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE)) {
-    this.logger.warn(`Running api getOrders at ${new Date()}`);
+    this.logger.debug(`Running api getOrders at ${new Date()}`);
     const ordersQuery = this.orderRepository
       .createQueryBuilder('order')
       .orderBy('"order"."createdAt"', 'DESC')
@@ -68,7 +68,7 @@ export class OrderService {
     page = 1,
     limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE),
   ) {
-    this.logger.warn(`Running api getOrdersByCustomer at ${new Date()}`);
+    this.logger.debug(`Running api getOrdersByCustomer at ${new Date()}`);
     const ordersQuery = this.orderRepository
       .createQueryBuilder('order')
       .where('"order"."customerId" = :customerId', { customerId: customerId })
@@ -92,7 +92,7 @@ export class OrderService {
   }
 
   async getOrder(id: string) {
-    this.logger.warn(`Running api getOrder at ${new Date()}`);
+    this.logger.debug(`Running api getOrder at ${new Date()}`);
     const order = await this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndMapOne('order.customer', Customer, 'customer', 'order.customerId = customer.id')
@@ -150,7 +150,7 @@ export class OrderService {
   }
 
   async getOrderByOrderCode(orderCode: string) {
-    this.logger.warn(`Running api getOrder at ${new Date()}`);
+    this.logger.debug(`Running api getOrder at ${new Date()}`);
     const order = await this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndMapOne('order.customer', Customer, 'customer', 'order.customerId = customer.id')
@@ -208,7 +208,7 @@ export class OrderService {
   }
 
   async createOrder(customerId: string, createOrderInput: CreateOrderInput) {
-    this.logger.warn(`Running api getToppingById at ${new Date()}`);
+    this.logger.debug(`Running api getToppingById at ${new Date()}`);
     const currentDate = moment()
       .format('YY:MM:DD')
       .replace(/:/g, '');
@@ -247,16 +247,27 @@ export class OrderService {
     let totalQuantity = 0;
     let totalPrice = 0;
     let totalDiscount = 0;
-    let isInArrUpdate: boolean;
-
+    let isInArrUpdateTopping = false;
+    let isInArrUpdateVariant = false;
     if (createOrderInput.orderDetails?.length > 0) {
-      for (let i = 0; i < createOrderInput.orderDetails.length; i++) {
-        existProductVariant = await this.productVariantRepository.findOne({
-          where: {
-            id: createOrderInput.orderDetails[i].id,
-          },
-        });
-        if (!existProductVariant) {
+      for (const orderDetail of createOrderInput.orderDetails) {
+        let totalPriceDetail = 0;
+        const product: any = await this.productRepository
+          .createQueryBuilder('product')
+          .innerJoinAndMapOne(
+            'product.productVariant',
+            ProductVariant,
+            'product_variant',
+            'product.id = product_variant.productId',
+          )
+          .where('"product_variant"."id" = :productVariantId', {
+            productVariantId: orderDetail.id,
+          })
+          .andWhere('"product_variant"."deletedAt" is null')
+          .andWhere('("product"."timePublication" <=:now or "product"."timePublication" is null)', { now: new Date() })
+          .getOne();
+
+        if (!product) {
           throw new HttpException(
             {
               statusCode: HttpStatus.NOT_FOUND,
@@ -266,19 +277,10 @@ export class OrderService {
           );
         }
 
-        const product = await this.productRepository
-          .createQueryBuilder('product')
-          .leftJoinAndMapOne(
-            'product.productVariant',
-            ProductVariant,
-            'product_variant',
-            'product.id = product_variant.productId',
-          )
-          .where('"product_variant"."id" = :productVariantId', { productVariantId: existProductVariant.id })
-          .andWhere('"product_variant"."deletedAt" is null')
-          .getOne();
-
-        if (product.toppingAvailable === false && createOrderInput.orderDetails[i].toppings?.length > 0) {
+        if (
+          (product.toppingAvailable === false || product.numberToppingAllow < 1) &&
+          orderDetail.toppings?.length > 0
+        ) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -288,12 +290,34 @@ export class OrderService {
           );
         }
 
-        if (product.numberToppingAllow > 0) {
+        if (product.productVariant.inStock === 0 && !product.sellOutOfStock) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'PRODUCT_VARIANT_OUT_OF_STOCK',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        if (orderDetail.unitPrice !== product.productVariant.price) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'UNIT_PRICE_INCORRECT',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        totalPriceDetail += orderDetail.unitPrice;
+        if (orderDetail.toppings?.length > 0) {
           let totalTopping = 0;
-          for (let j = 0; j < createOrderInput.orderDetails[i].toppings?.length; j++) {
+          for (const topping of orderDetail.toppings) {
             const existProductTopping = await this.productToppingRepository.findOne({
-              productId: product.id,
-              toppingId: createOrderInput.orderDetails[i].toppings[j].id,
+              where: {
+                productId: product.id,
+                toppingId: topping.id,
+              },
             });
             if (!existProductTopping) {
               throw new HttpException(
@@ -304,64 +328,9 @@ export class OrderService {
                 HttpStatus.BAD_REQUEST,
               );
             }
-            totalTopping += createOrderInput.orderDetails[i].toppings[j].quantity;
-          }
-          if (totalTopping > product.numberToppingAllow) {
-            throw new HttpException(
-              {
-                statusCode: HttpStatus.BAD_REQUEST,
-                message: 'TOO_MUCH_TOPPING',
-              },
-              HttpStatus.BAD_REQUEST,
-            );
-          }
-        }
-
-        if (existProductVariant.inStock === 0) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-              message: 'PRODUCT_VARIANT_OUT_OF_STOCK',
-            },
-            HttpStatus.UNPROCESSABLE_ENTITY,
-          );
-        }
-        if (createOrderInput.orderDetails[i].price !== existProductVariant.price) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-              message: 'PRICE_INCORRECT',
-            },
-            HttpStatus.UNPROCESSABLE_ENTITY,
-          );
-        }
-        const existProduct = await this.productRepository
-          .createQueryBuilder('product')
-          .leftJoinAndMapOne(
-            'product.productVariant',
-            ProductVariant,
-            'product_variant',
-            'product.id = product_variant.productId',
-          )
-          .where('product_variant.id = :id', { id: existProductVariant.id })
-          .andWhere('"product_variant"."deletedAt" is null')
-          .getOne();
-
-        if (existProduct.toppingAvailable === false && createOrderInput.orderDetails[i].toppings?.length > 0) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'CANNOT_ORDER_TOPPING',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-        if (createOrderInput.orderDetails[i].toppings?.length > 0) {
-          for (let j = 0; j < createOrderInput.orderDetails[i].toppings.length; j++) {
             const existTopping = await this.toppingRepository.findOne({
               where: {
-                id: createOrderInput.orderDetails[i].toppings[j].id,
-                categoryId: createOrderInput.orderDetails[i].toppings[j].categoryId,
+                id: topping.id,
               },
             });
             if (!existTopping) {
@@ -373,8 +342,7 @@ export class OrderService {
                 HttpStatus.NOT_FOUND,
               );
             }
-
-            if (existTopping.price !== createOrderInput.orderDetails[i].toppings[j].price) {
+            if (existTopping.price !== topping.price) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -383,33 +351,27 @@ export class OrderService {
                 HttpStatus.BAD_REQUEST,
               );
             }
-            totalPrice =
-              totalPrice +
-              createOrderInput.orderDetails[i].toppings[j].price *
-                createOrderInput.orderDetails[i].toppings[j].quantity *
-                createOrderInput.orderDetails[i].quantity;
-
-            isInArrUpdate = false;
-            for (let k = 0; k < arrUpdateStockTopping.length; k++) {
-              if (arrUpdateStockTopping[k].id === existTopping.id) {
-                arrUpdateStockTopping[k].inStock -=
-                  createOrderInput.orderDetails[i].toppings[i].quantity * createOrderInput.orderDetails[i].quantity;
-                if (arrUpdateStockTopping[k].inStock < 0) {
+            totalTopping += topping.quantity;
+            totalPriceDetail += topping.price * topping.quantity;
+            for (const updateTopping of arrUpdateStockTopping) {
+              isInArrUpdateTopping = false;
+              if (updateTopping.id === existTopping.id) {
+                updateTopping.inStock -= topping.quantity * orderDetail.quantity;
+                if (updateTopping.inStock < 0) {
                   throw new HttpException(
                     {
-                      statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+                      statusCode: HttpStatus.BAD_REQUEST,
                       message: 'TOPPING_OUT_OF_STOCK',
                     },
-                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    HttpStatus.BAD_REQUEST,
                   );
                 }
-                isInArrUpdate = true;
+                isInArrUpdateTopping = true;
                 break;
               }
             }
-            if (isInArrUpdate === false) {
-              existTopping.inStock -=
-                createOrderInput.orderDetails[i].toppings[i].quantity * createOrderInput.orderDetails[i].quantity;
+            if (!isInArrUpdateTopping) {
+              existTopping.inStock -= topping.quantity * orderDetail.quantity;
               if (existTopping.inStock < 0) {
                 throw new HttpException(
                   {
@@ -422,139 +384,87 @@ export class OrderService {
               arrUpdateStockTopping.push(existTopping);
             }
           }
+          if (totalTopping > product.numberToppingAllow) {
+            throw new HttpException(
+              {
+                statusCode: HttpStatus.BAD_REQUEST,
+                message: `TOPPING_ALLOW_MUST_BE_${product.numberToppingAllow}`,
+              },
+              HttpStatus.BAD_REQUEST,
+            );
+          }
         }
 
-        totalQuantity += createOrderInput.orderDetails[i].quantity;
-        totalPrice += createOrderInput.orderDetails[i].price * createOrderInput.orderDetails[i].quantity;
-        isInArrUpdate = false;
-        for (let j = 0; j < arrUpdateStockProductVariant.length; j++) {
-          if (arrUpdateStockProductVariant[j].id === existProductVariant.id) {
-            arrUpdateStockProductVariant[j].inStock -= createOrderInput.orderDetails[i].quantity;
-            if (arrUpdateStockProductVariant[j].inStock < 0) {
+        if (totalPriceDetail !== orderDetail.totalPrice) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'TOTAL_PRICE_IN_ORDER_DETAIL_INCORRECT',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        totalQuantity += orderDetail.quantity;
+        totalPrice += orderDetail.totalPrice * orderDetail.quantity;
+        for (const updateProductVariant of arrUpdateStockProductVariant) {
+          isInArrUpdateVariant = false;
+          if (updateProductVariant.id === product.productVariant.id) {
+            updateProductVariant.inStock -= orderDetail.quantity;
+            if (updateProductVariant.inStock < 0) {
               throw new HttpException(
                 {
-                  statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+                  statusCode: HttpStatus.BAD_REQUEST,
                   message: 'PRODUCT_VARIANT_OUT_OF_STOCK',
                 },
-                HttpStatus.UNPROCESSABLE_ENTITY,
+                HttpStatus.BAD_REQUEST,
               );
             }
-            isInArrUpdate = true;
+            isInArrUpdateVariant = true;
             break;
           }
         }
-        if (isInArrUpdate === false) {
-          existProductVariant.inStock -= createOrderInput.orderDetails[i].quantity;
-          if (existProductVariant.inStock < 0) {
+        if (!isInArrUpdateVariant) {
+          product.productVariant.inStock -= orderDetail.quantity;
+          if (product.productVariant.inStock < 0) {
             throw new HttpException(
               {
-                statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+                statusCode: HttpStatus.BAD_REQUEST,
                 message: 'PRODUCT_VARIANT_OUT_OF_STOCK',
               },
-              HttpStatus.UNPROCESSABLE_ENTITY,
+              HttpStatus.BAD_REQUEST,
             );
           }
-          arrUpdateStockProductVariant.push(existProductVariant);
+          arrUpdateStockProductVariant.push(product.productVariant);
         }
       }
     }
 
-    if (createOrderInput.toppings?.length > 0) {
-      for (let i = 0; i < createOrderInput.toppings.length; i++) {
-        const existTopping = await this.toppingRepository.findOne({
-          where: {
-            id: createOrderInput.toppings[i].id,
-            categoryId: createOrderInput.toppings[i].categoryId,
-          },
-        });
-        if (!existTopping) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.NOT_FOUND,
-              message: 'TOPPING_NOT_EXIST',
-            },
-            HttpStatus.NOT_FOUND,
-          );
-        }
-
-        if (existTopping.inStock === 0) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-              message: 'TOPPING_OUT_OF_STOCK',
-            },
-            HttpStatus.UNPROCESSABLE_ENTITY,
-          );
-        }
-        if (createOrderInput.toppings[i].price !== existTopping.price) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-              message: 'PRICE_INCORRECT',
-            },
-            HttpStatus.UNPROCESSABLE_ENTITY,
-          );
-        }
-
-        totalQuantity = totalQuantity + createOrderInput.toppings[i].quantity;
-        totalPrice = totalPrice + createOrderInput.toppings[i].price * createOrderInput.toppings[i].quantity;
-        isInArrUpdate = false;
-        for (let j = 0; j < arrUpdateStockTopping.length; j++) {
-          if (arrUpdateStockTopping[j].id === existTopping.id) {
-            arrUpdateStockTopping[j].inStock -= createOrderInput.toppings[i].quantity;
-            if (arrUpdateStockTopping[j].inStock < 0) {
-              throw new HttpException(
-                {
-                  statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-                  message: 'TOPPING_OUT_OF_STOCK',
-                },
-                HttpStatus.UNPROCESSABLE_ENTITY,
-              );
-            }
-            isInArrUpdate = true;
-            break;
-          }
-        }
-        if (isInArrUpdate === false) {
-          existTopping.inStock = existTopping.inStock - createOrderInput.toppings[i].quantity;
-          if (existTopping.inStock < 0) {
-            throw new HttpException(
-              {
-                statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
-                message: 'TOPPING_OUT_OF_STOCK',
-              },
-              HttpStatus.UNPROCESSABLE_ENTITY,
-            );
-          }
-          arrUpdateStockTopping.push(existTopping);
-        }
-      }
-    }
     if (totalPrice - totalDiscount !== createOrderInput.orderAmount) {
       throw new HttpException(
         {
-          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          statusCode: HttpStatus.BAD_REQUEST,
           message: 'ORDER_AMOUNT_WRONG',
         },
-        HttpStatus.UNPROCESSABLE_ENTITY,
+        HttpStatus.BAD_REQUEST,
       );
     }
     if (totalDiscount !== createOrderInput.totalDiscount) {
       throw new HttpException(
         {
-          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          statusCode: HttpStatus.BAD_REQUEST,
           message: 'TOTAL_DISCOUNT_WRONG',
         },
-        HttpStatus.UNPROCESSABLE_ENTITY,
+        HttpStatus.BAD_REQUEST,
       );
     }
     if (totalQuantity !== createOrderInput.orderQuantity) {
       throw new HttpException(
         {
-          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          statusCode: HttpStatus.BAD_REQUEST,
           message: 'ORDER_QUANTITY_WRONG',
         },
-        HttpStatus.UNPROCESSABLE_ENTITY,
+        HttpStatus.BAD_REQUEST,
       );
     }
 
@@ -564,40 +474,27 @@ export class OrderService {
     const arrOrderDetail = [];
     const arrOrderDetailTopping = [];
     existShipping.isHaveOrder = true;
+    newOrder.setAttributes(createOrderInput);
+    newOrder.customerId = customerId;
+    newOrder.orderCode = orderCode;
     await getManager().transaction(async transactionalEntityManager => {
-      newOrder.setAttributes(createOrderInput);
-      newOrder.customerId = customerId;
-      newOrder.orderCode = orderCode;
       newOrder = await transactionalEntityManager.save<Order>(newOrder);
       if (createOrderInput.orderDetails?.length > 0) {
-        for (let i = 0; i < createOrderInput.orderDetails.length; i++) {
+        for (const orderDetail of createOrderInput.orderDetails) {
           newOrderDetail = new OrderDetail();
-          newOrderDetail.setAttributes(createOrderInput.orderDetails[i]);
+          newOrderDetail.setAttributes(orderDetail);
           newOrderDetail.orderId = newOrder.id;
           newOrderDetail = await transactionalEntityManager.save<OrderDetail>(newOrderDetail);
-          for (let j = 0; j < createOrderInput.orderDetails[i].toppings?.length; j++) {
+          for (const topping of orderDetail.toppings) {
             newOrderDetailTopping = new OrderDetailTopping();
-            newOrderDetailTopping.toppingId = createOrderInput.orderDetails[i].toppings[j].id;
-            newOrderDetailTopping.quantity =
-              createOrderInput.orderDetails[i].toppings[j].quantity * createOrderInput.orderDetails[i].quantity;
-            newOrderDetailTopping.unitPrice = createOrderInput.orderDetails[i].toppings[j].price;
+            newOrderDetailTopping.toppingId = topping.id;
+            newOrderDetailTopping.quantity = topping.quantity * orderDetail.quantity;
+            newOrderDetailTopping.unitPrice = topping.price;
             newOrderDetailTopping.orderDetailId = newOrderDetail.id;
             arrOrderDetailTopping.push(newOrderDetailTopping);
           }
         }
       }
-
-      if (createOrderInput.toppings?.length > 0) {
-        for (let i = 0; i < createOrderInput.toppings.length; i++) {
-          newOrderDetail = new OrderDetail();
-          newOrderDetail.toppingId = createOrderInput.toppings[i].id;
-          newOrderDetail.quantity = createOrderInput.toppings[i].quantity;
-          newOrderDetail.unitPrice = createOrderInput.toppings[i].price;
-          newOrderDetail.orderId = newOrder.id;
-          arrOrderDetail.push(newOrderDetail);
-        }
-      }
-
       await transactionalEntityManager.save<OrderDetail[]>(arrOrderDetail);
       await transactionalEntityManager.save<OrderDetailTopping[]>(arrOrderDetailTopping);
       await transactionalEntityManager.save<ProductVariant[]>(arrUpdateStockProductVariant);
@@ -617,7 +514,7 @@ export class OrderService {
     const maxOrderAmount = orderFilterInput.maxOrderAmount;
     let createdAtTo: any = orderFilterInput.createdAtTo;
     let createdAtFrom: any = orderFilterInput.createdAtFrom;
-    const status = orderFilterInput.status;
+    const arrStatus = orderFilterInput.arrStatus;
     const customerId = orderFilterInput.customerId;
 
     const customerQuery = this.customerRepository.createQueryBuilder('customer');
@@ -656,8 +553,8 @@ export class OrderService {
     }
 
     if (status && status.length > 0) {
-      cacheKey += 'status' + status.join(',');
-      orderQuery.andWhere('"status" IN (:...status)');
+      cacheKey += 'status' + arrStatus.join(',');
+      orderQuery.andWhere('"status" IN (:...arrStatus)');
     }
 
     if (orderFilterInput.searchValue) {
@@ -691,7 +588,7 @@ export class OrderService {
         maxOrderAmount,
         createdAtTo,
         createdAtFrom,
-        status,
+        arrStatus,
         customerId,
       })
       .limit(limit)
@@ -789,86 +686,56 @@ export class OrderService {
     const arrUpdateToppingStock = [];
     let isInArrUpdate: boolean;
     if (updateOrderInput.status === 5) {
-      const orderDetailProduct = await this.orderDetailRepository.find({
+      const orderDetailProducts = await this.orderDetailRepository.find({
         where: {
           orderId: id,
           toppingId: IsNull(),
         },
       });
-      if (orderDetailProduct?.length > 0) {
-        for (let i = 0; i < orderDetailProduct.length; i++) {
+      if (orderDetailProducts?.length > 0) {
+        for (const orderDetailProduct of orderDetailProducts) {
           const existProductVariant = await this.productVariantRepository.findOne({
             where: {
-              id: orderDetailProduct[i].productVariantId,
+              id: orderDetailProduct.productVariantId,
             },
           });
 
           isInArrUpdate = false;
-          for (let j = 0; j < arrUpdateProductStock.length; j++) {
-            if (arrUpdateProductStock[j].id === existProductVariant.id) {
-              arrUpdateProductStock[j].inStock += orderDetailProduct[i].quantity;
+          for (const productStock of arrUpdateProductStock) {
+            if (productStock.id === existProductVariant.id) {
+              productStock.inStock += orderDetailProduct.quantity;
               isInArrUpdate = true;
               break;
             }
           }
           if (isInArrUpdate === false) {
-            existProductVariant.inStock += orderDetailProduct[i].quantity;
+            existProductVariant.inStock += orderDetailProduct.quantity;
             arrUpdateProductStock.push(existProductVariant);
           }
 
-          const existProductTopping = await this.orderDetailToppingRepository.find({
+          const orderDetailProductToppings = await this.orderDetailToppingRepository.find({
             where: {
-              orderDetailId: orderDetailProduct[i].id,
+              orderDetailId: orderDetailProduct.id,
             },
           });
-          for (let j = 0; j < existProductTopping.length; j++) {
+          for (const orderDetailProductTopping of orderDetailProductToppings) {
             const existTopping = await this.toppingRepository.findOne({
               where: {
-                id: existProductTopping[j].toppingId,
+                id: orderDetailProductTopping.toppingId,
               },
             });
             isInArrUpdate = false;
-            for (let k = 0; k < arrUpdateToppingStock.length; k++) {
-              if (arrUpdateToppingStock[k].id === existTopping.id) {
-                arrUpdateToppingStock[k].inStock += existProductTopping[j].quantity;
+            for (const toppingStock of arrUpdateToppingStock) {
+              if (toppingStock.id === existTopping.id) {
+                toppingStock.inStock += orderDetailProductTopping.quantity;
                 isInArrUpdate = true;
                 break;
               }
             }
             if (isInArrUpdate === false) {
-              existTopping.inStock += existProductTopping[j].quantity;
+              existTopping.inStock += orderDetailProductTopping.quantity;
               arrUpdateToppingStock.push(existTopping);
             }
-          }
-        }
-      }
-
-      const orderDetailTopping = await this.orderDetailRepository.find({
-        where: {
-          orderId: id,
-          productVariantId: IsNull(),
-        },
-      });
-
-      if (orderDetailTopping?.length > 0) {
-        for (let i = 0; i < orderDetailTopping.length; i++) {
-          const existTopping = await this.toppingRepository.findOne({
-            where: {
-              id: orderDetailTopping[i].toppingId,
-            },
-          });
-
-          let isInArrUpdate = false;
-          for (let j = 0; j < arrUpdateToppingStock.length; j++) {
-            if (orderDetailTopping[i].toppingId === arrUpdateToppingStock[j].id) {
-              arrUpdateToppingStock[j].inStock += orderDetailTopping[i].quantity;
-              isInArrUpdate = true;
-              break;
-            }
-          }
-          if (isInArrUpdate === false) {
-            existTopping.inStock += orderDetailTopping[i].quantity;
-            arrUpdateToppingStock.push(existTopping);
           }
         }
       }

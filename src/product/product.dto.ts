@@ -27,6 +27,9 @@ export class ProductVariant {
   readonly flavor: string;
 
   @ApiProperty({ required: false })
+  readonly unit?: string;
+
+  @ApiProperty({ required: false })
   readonly inStock: number;
 
   @ApiProperty()
@@ -160,9 +163,6 @@ export class CreateManyProductInput {
   readonly shortDescription?: string;
 
   @ApiProperty({ required: false })
-  readonly unit?: string;
-
-  @ApiProperty({ required: false })
   readonly sellOutOfStock?: boolean;
 
   @ApiProperty({ required: false })
@@ -196,6 +196,9 @@ export class CreateProductVariantInput {
 
   @ApiProperty({ required: false })
   readonly flavor: string;
+
+  @ApiProperty({ required: false })
+  readonly unit?: string;
 
   @ApiProperty({ required: false })
   readonly inStock: number;
@@ -254,9 +257,6 @@ export class UpdateProductInput {
   readonly shortDescription?: string;
 
   @ApiProperty({ required: false })
-  readonly unit?: string;
-
-  @ApiProperty({ required: false })
   readonly toppingAvailable?: boolean;
 
   @ApiProperty({ required: false })
@@ -283,6 +283,9 @@ export class UpdateProductVariantInput {
   readonly flavor: string;
 
   @ApiProperty({ required: false })
+  readonly unit?: string;
+
+  @ApiProperty({ required: false })
   readonly inStock: number;
 
   @ApiProperty({ required: false })
@@ -296,9 +299,6 @@ export class UpdateProductVariantInput {
 
   @ApiProperty({ required: false })
   readonly avatar: string;
-
-  @ApiProperty({ required: false, type: [ProductPictures] })
-  readonly productPictures: ProductPictures[];
 }
 
 export class FilterProductAdminInput {

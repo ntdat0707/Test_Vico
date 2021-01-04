@@ -12,9 +12,9 @@ import { PermissionRole } from '../entities/permissionRole.entity';
 import { Shipping } from '../entities/shipping.entity';
 import { ProductVariant } from '../entities/productVariant.entity';
 import { Topping } from '../entities/topping.entity';
-import { OrderDetailTopping } from 'src/entities/orderDetailTopping.entity';
-import { Customer } from 'src/entities/customer.entity';
-import { ProductTopping } from 'src/entities/productTopping.entity';
+import { OrderDetailTopping } from '../entities/orderDetailTopping.entity';
+import { Customer } from '../entities/customer.entity';
+import { ProductTopping } from '../entities/productTopping.entity';
 
 @Module({
   imports: [

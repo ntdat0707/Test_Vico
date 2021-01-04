@@ -8,7 +8,7 @@ import { GetUser } from '../auth/get-user.decorator';
 import { CreateShippingInput, UpdateShippingInput } from './shipping.dto';
 import { CreateShippingPipe } from '../lib/validatePipe/shipping/createShippingPipe.class';
 import { CheckUUID } from '../lib/validatePipe/uuidPipe.class';
-import { UpdateShippingPipe } from 'src/lib/validatePipe/shipping/updateShippingPipe.class';
+import { UpdateShippingPipe } from '../lib/validatePipe/shipping/updateShippingPipe.class';
 
 @Controller('shipping')
 @ApiTags('Shipping')

@@ -38,24 +38,6 @@ export class CreateToppingPipe implements PipeTransform<any> {
       }
     }
 
-    if (!value.categoryId) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: 'CATEGORY_ID_REQUIRED',
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    if (!checkUUID(value.categoryId)) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: 'CATEGORY_ID_NOT_VALID',
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
     if (value.trackQuantity && !value.inStock) {
       throw new HttpException(
         {

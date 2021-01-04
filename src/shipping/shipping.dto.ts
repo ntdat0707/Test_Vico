@@ -8,13 +8,13 @@ export class CreateShippingInput {
   readonly phoneNumber: string;
 
   @ApiProperty()
-  readonly provinceId: string;
+  readonly provinceId: number;
 
   @ApiProperty()
-  readonly districtId: string;
+  readonly districtId: number;
 
   @ApiProperty()
-  readonly wardId: string;
+  readonly wardId: number;
 
   @ApiProperty()
   readonly address: string;
@@ -31,13 +31,13 @@ export class UpdateShippingInput {
   readonly phoneNumber: string;
 
   @ApiProperty()
-  readonly provinceId: string;
+  readonly provinceId: number;
 
   @ApiProperty()
-  readonly districtId: string;
+  readonly districtId: number;
 
   @ApiProperty()
-  readonly wardId: string;
+  readonly wardId: number;
 
   @ApiProperty()
   readonly address: string;

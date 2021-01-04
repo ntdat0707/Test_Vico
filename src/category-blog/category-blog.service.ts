@@ -108,7 +108,7 @@ export class CategoryBlogService {
   }
 
   async createCategoryBlog(categoryBlogPicture: any, createCategoryBlogInput: CreateCategoryBlogInput) {
-    this.logger.warn(`Running api createCategoryBlog at ${new Date()}`);
+    this.logger.debug(`Running api createCategoryBlog at ${new Date()}`);
     const existNameCategory = await this.categoryBlogRepository.findOne({
       where: {
         name: createCategoryBlogInput.name,
@@ -214,7 +214,7 @@ export class CategoryBlogService {
   }
 
   async updateCategoryBlog(id: string, categoryBlogPicture: any, updateCategoryBlogInput: UpdateCategoryBlogInput) {
-    this.logger.warn(`Running api updateCategoryBlog at ${new Date()}`);
+    this.logger.debug(`Running api updateCategoryBlog at ${new Date()}`);
     const existCategoryBlog = await this.categoryBlogRepository.findOne({
       where: {
         id: id,
@@ -357,7 +357,7 @@ export class CategoryBlogService {
   }
 
   async deleteCategoryBlog(id: string) {
-    this.logger.warn(`Running api deleteCategoryBlog at ${new Date()}`);
+    this.logger.debug(`Running api deleteCategoryBlog at ${new Date()}`);
     const existCategoryBlog = await this.categoryBlogRepository.findOne({
       where: {
         id: id,

@@ -29,9 +29,6 @@ export class Product {
   bottleType: string;
 
   @Column('varchar', { nullable: true })
-  unit: string;
-
-  @Column('varchar', { nullable: true })
   metaDescription: string;
 
   @Column('varchar', { nullable: true })
@@ -89,7 +86,6 @@ export class Product {
     if (object.status === true || object.status === false) this.status = object.status;
     if (object.timePublication || object.timePublication === null) this.timePublication = object.timePublication;
     if (object.bottleType !== undefined) this.bottleType = object.bottleType;
-    if (object.unit !== undefined) this.unit = object.unit;
     if (object.metaDescription !== undefined) this.metaDescription = object.metaDescription;
     if (object.alt !== undefined) this.alt = object.alt;
     if (object.rate || object.rate === 0) this.rate = parseInt(object.rate);

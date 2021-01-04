@@ -34,8 +34,13 @@ export class AuthController {
     return await this.authService.refreshToken(refreshTokenInput);
   }
 
-  @Post('login-manager')
+  @Post('/admin/login')
   loginManager(@Body(new LoginManagerPipe()) loginManagerInput: LoginManagerInput) {
     return this.authService.loginManager(loginManagerInput);
+  }
+
+  @Post('/admin/refresh-token')
+  async refreshTokenManager(@Body() refreshTokenInput: RefreshTokenInput) {
+    return await this.authService.refreshTokenManager(refreshTokenInput);
   }
 }

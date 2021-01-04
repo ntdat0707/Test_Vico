@@ -2,7 +2,7 @@ import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from '../entities/category.entity';
 import { Repository, IsNull, Connection, Not, getManager, In } from 'typeorm';
-import { CreateCategoryInput, UpdateCategoryInput } from './category.dto';
+import { CreateCategoryInput, SettingPositionCategoryInput, UpdateCategoryInput } from './category.dto';
 import { Product } from '../entities/product.entity';
 import { Blog } from '../entities/blog.entity';
 import { ProductCategory } from '../entities/productCategory.entity';
@@ -95,7 +95,21 @@ export class CategoryService {
       throw new HttpException(
         {
           statusCode: HttpStatus.CONFLICT,
-          message: 'CATEGORY_ALREADY_EXIST',
+          message: 'CATEGORY_NAME_ALREADY_EXIST',
+        },
+        HttpStatus.CONFLICT,
+      );
+    }
+    const existCategoryCode = await this.categoryRepository.findOne({
+      where: {
+        code: createCategoryInput.code,
+      },
+    });
+    if (existCategoryCode) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.CONFLICT,
+          message: 'CATEGORY_CODE_ALREADY_EXIST',
         },
         HttpStatus.CONFLICT,
       );
@@ -118,7 +132,6 @@ export class CategoryService {
     existSlug = await this.blogRepository
       .createQueryBuilder('blog')
       .where(`slugs::text = :slug`, { slug: `%"${createCategoryInput.slug}"%` })
-      .andWhere('"deletedAt" is null')
       .getOne();
     if (existSlug) {
       throw new HttpException(
@@ -337,5 +350,37 @@ export class CategoryService {
     return {
       data: categories,
     };
+  }
+
+  async settingCategoryPosition(settingPositionCategoryInput: SettingPositionCategoryInput) {
+    const arrUpdateCategory = [];
+    for (const categoryPosition of settingPositionCategoryInput.categoryPositions) {
+      const category = await this.categoryRepository.findOne({
+        select: ['id', 'position'],
+        where: {
+          id: categoryPosition.categoryId,
+          status: true,
+        },
+      });
+
+      if (!category) {
+        throw new HttpException(
+          {
+            status: HttpStatus.NOT_FOUND,
+            error: 'CATEGORY_NOT_EXIST',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      category.position = categoryPosition.position;
+      arrUpdateCategory.push(category);
+    }
+
+    await getManager().transaction(async transactionalEntityManager => {
+      await transactionalEntityManager.update(Category, { position: Not(IsNull()) }, { position: null });
+      await transactionalEntityManager.save<Category>(arrUpdateCategory);
+    });
+    await this.connection.queryResultCache.clear();
+    return { data: true };
   }
 }

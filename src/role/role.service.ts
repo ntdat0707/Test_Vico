@@ -23,7 +23,7 @@ export class RoleService {
   ) {}
 
   async createRole(createRoleInput: CreateRoleInput) {
-    this.logger.warn(`Running api createRole at ${new Date()}`);
+    this.logger.debug(`Running api createRole at ${new Date()}`);
     const existRole = await this.roleRepository.findOne({
       where: {
         name: createRoleInput.name,
@@ -50,7 +50,7 @@ export class RoleService {
   }
 
   async updateRole(id: string, updateRoleInput: UpdateRoleInput) {
-    this.logger.warn(`Running api updateRole at ${new Date()}`);
+    this.logger.debug(`Running api updateRole at ${new Date()}`);
     let existRole: Role;
     existRole = await this.roleRepository.findOne({
       where: {
@@ -91,7 +91,7 @@ export class RoleService {
   }
 
   async deleteRole(id: string) {
-    this.logger.warn(`Running api deleteRole at ${new Date()}`);
+    this.logger.debug(`Running api deleteRole at ${new Date()}`);
     const existRole: Role = await this.roleRepository.findOne({
       where: {
         id: id,
@@ -128,9 +128,6 @@ export class RoleService {
 
     //clear cache
     await this.connection.queryResultCache.clear();
-    //await this.connection.queryResultCache.remove(['users*']);
-    //await this.connection.queryResultCache.remove([`user_${existUser.id}`]);
-    //await this.connection.queryResultCache.remove([`user_${existUser.email}`]);
     await this.roleRepository.softRemove(existRole);
     return {
       data: { status: true },
@@ -138,7 +135,7 @@ export class RoleService {
   }
 
   async addPermissionForRole(addPermissionForRoleInput: AddPermissionForRoleInput) {
-    this.logger.warn(`Running api addPermissionForRole at ${new Date()}`);
+    this.logger.debug(`Running api addPermissionForRole at ${new Date()}`);
     const existRole = await this.roleRepository.findOne({
       where: {
         id: addPermissionForRoleInput.roleId,
@@ -165,10 +162,10 @@ export class RoleService {
     const removePermissionIds = _.difference(currentPermissionIds, addPermissionForRoleInput.permissionIds);
     const addPermissionIds = _.difference(addPermissionForRoleInput.permissionIds, currentPermissionIds);
     if (addPermissionIds.length > 0) {
-      for (let i = 0; i < addPermissionIds.length; i++) {
+      for (const permissionId of addPermissionIds) {
         const permission = await this.permissionRepository.findOne({
           where: {
-            id: addPermissionIds[i],
+            id: permissionId,
           },
         });
         if (!permission) {
@@ -182,7 +179,7 @@ export class RoleService {
         }
         const newRolePermission = new PermissionRole();
         newRolePermission.roleId = existRole.id;
-        newRolePermission.permissionId = addPermissionIds[i];
+        newRolePermission.permissionId = permissionId;
         arrAddRolePermission.push(newRolePermission);
       }
     }
@@ -203,7 +200,7 @@ export class RoleService {
   }
 
   async getPermissionByRole(roleId: string) {
-    this.logger.warn(`Running api getPermissionByRole at ${new Date()}`);
+    this.logger.debug(`Running api getPermissionByRole at ${new Date()}`);
     const rolePermissions = await this.rolePermissionRepository.find({
       where: {
         roleId: roleId,
@@ -231,7 +228,7 @@ export class RoleService {
   }
 
   async getPermissions() {
-    this.logger.warn(`Running api getPermissions at ${new Date()}`);
+    this.logger.debug(`Running api getPermissions at ${new Date()}`);
     const permissions = await this.permissionRepository.find({
       where: {
         isChildren: false,
@@ -244,7 +241,7 @@ export class RoleService {
   }
 
   async getRoles() {
-    this.logger.warn(`Running api getRoles at ${new Date()}`);
+    this.logger.debug(`Running api getRoles at ${new Date()}`);
     const roles = await this.roleRepository.find();
     return {
       data: roles,
@@ -252,7 +249,7 @@ export class RoleService {
   }
 
   async getRole(id: string) {
-    this.logger.warn(`Running api getRole at ${new Date()}`);
+    this.logger.debug(`Running api getRole at ${new Date()}`);
     const role: any = await this.roleRepository
       .createQueryBuilder('role')
       .where('role."deletedAt" is null')

@@ -124,9 +124,9 @@ export class BlogService {
       );
     }
     const relationship = [];
-    if (existBlog.tags) {
+    if (existBlog.tags?.length > 0) {
       const tags = existBlog.tags.split('|');
-      for (let i = 0; i < tags.length; i++) {
+      for (const tag of tags) {
         const blogs = await this.blogRepository
           .createQueryBuilder('blog')
           .leftJoinAndMapOne(
@@ -136,14 +136,14 @@ export class BlogService {
             '"blog"."categoryBlogId"=category_blog.id',
           )
           .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id')
-          .where('tags = :tag', { tag: tags[i] })
+          .where('tags = :tag', { tag: tag })
           .andWhere('blog."id" != :id', { id: existBlog.id })
           .andWhere('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
           .select(['blog', 'category_blog.id', 'category_blog.name', 'employee.id', 'employee.fullName'])
-          .cache(`relationship_${tags[i]}`)
+          .cache(`relationship_${tag}`)
           .getMany();
         relationship.push({
-          tag: tags[i],
+          tag: tag,
           blogs: blogs,
         });
       }
@@ -473,10 +473,10 @@ export class BlogService {
     };
   }
 
-  async blogFilter(blogFilterInput: FilterBlogInput) {
+  async blogFilterAdmin(blogFilterInput: FilterBlogInput) {
     const page = blogFilterInput.page || 1;
     const limit = blogFilterInput.limit || parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE);
-    let cacheKey = 'blog_filter';
+    let cacheKey = 'blog_filter_admin';
     const searchValue = blogFilterInput.searchValue;
     let searchValueConvert = '';
     const parentId = blogFilterInput.parentId;
@@ -508,15 +508,104 @@ export class BlogService {
     }
     if (parentId) {
       cacheKey += 'parentId' + parentId;
-      const categoryBlogChildren = await this.categoryBlogRepository.find({
+      const categoryBlogChildrens = await this.categoryBlogRepository.find({
         where: {
           parentId: parentId,
           deletedAt: IsNull(),
         },
       });
-      if (categoryBlogChildren.length > 0) {
-        for (let i = 0; i < categoryBlogChildren.length; i++) {
-          categoryBlogOfParents.push(categoryBlogChildren[i].id);
+      if (categoryBlogChildrens.length > 0) {
+        for (const categoryBlogChildren of categoryBlogChildrens) {
+          categoryBlogOfParents.push(categoryBlogChildren);
+        }
+      } else {
+        categoryBlogOfParents.push(parentId);
+      }
+      blogQuery.andWhere('blog."categoryBlogId" IN (:...categoryBlogOfParents)');
+      countQuery.andWhere('blog."categoryBlogId" IN (:...categoryBlogOfParents)');
+    }
+
+    if (categoryBlogs?.length > 0) {
+      cacheKey += 'categoryBlogs' + categoryBlogs.join(',');
+      blogQuery.andWhere('blog."categoryBlogId" IN (:...categoryBlogs)');
+      countQuery.andWhere('blog."categoryBlogId" IN (:...categoryBlogs)');
+    }
+    const countBlog: number = await countQuery
+      .limit(limit)
+      .offset((page - 1) * limit)
+      .cache(cacheKey)
+      .setParameters({
+        categoryBlogOfParents,
+        categoryBlogs,
+      })
+      .getCount();
+
+    const blogs: Blog[] = await blogQuery
+      .limit(limit)
+      .offset((page - 1) * limit)
+      .cache(`${cacheKey}_page${page}_limit${limit}`)
+      .setParameters({
+        categoryBlogOfParents,
+        categoryBlogs,
+      })
+      .getMany();
+
+    const pages = Math.ceil(Number(countBlog) / limit);
+    return {
+      page: Number(page),
+      totalPages: pages,
+      limit: Number(limit),
+      totalRecords: countBlog,
+      data: blogs,
+    };
+  }
+
+  async blogFilter(
+    searchValue: string,
+    parentId: string,
+    categoryBlogs: string[],
+    page = 1,
+    limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE),
+  ) {
+    let cacheKey = 'blog_filter';
+    let searchValueConvert = '';
+
+    const categoryBlogOfParents = [];
+    const blogQuery = this.blogRepository
+      .createQueryBuilder('blog')
+      .where('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
+      .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
+      .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id')
+      .orderBy('"blog"."createdAt"', 'DESC')
+      .limit(limit)
+      .offset((page - 1) * limit);
+    const countQuery = this.blogRepository
+      .createQueryBuilder('blog')
+      .where('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
+      .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
+      .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id');
+
+    if (searchValue) {
+      searchValueConvert += `%${convertTv(searchValue)}%`;
+      cacheKey += 'searchValue' + searchValue;
+      const bracket = new Brackets(qb => {
+        qb.orWhere(`LOWER(convertTVkdau("blog"."title")) like '${searchValueConvert}'`);
+        qb.orWhere(`LOWER(convertTVkdau("employee"."fullName")) like '${searchValueConvert}'`);
+      });
+      blogQuery.andWhere(bracket);
+      countQuery.andWhere(bracket);
+    }
+    if (parentId) {
+      cacheKey += 'parentId' + parentId;
+      const categoryBlogChildrens = await this.categoryBlogRepository.find({
+        where: {
+          parentId: parentId,
+          deletedAt: IsNull(),
+        },
+      });
+      if (categoryBlogChildrens.length > 0) {
+        for (const categoryBlogChildren of categoryBlogChildrens) {
+          categoryBlogOfParents.push(categoryBlogChildren);
         }
       } else {
         categoryBlogOfParents.push(parentId);

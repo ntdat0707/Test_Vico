@@ -5,48 +5,10 @@ class ToppingProduct {
   readonly id: string;
 
   @ApiProperty()
-  readonly categoryId: string;
-
-  @ApiProperty()
-  readonly name: string;
-
-  @ApiProperty()
   readonly price: number;
 
   @ApiProperty()
   readonly quantity: number;
-
-  @ApiProperty()
-  readonly unit: string;
-
-  @ApiProperty()
-  readonly trackQuantity: boolean;
-
-  @ApiProperty()
-  readonly inStock: number;
-
-  @ApiProperty()
-  readonly picture: string;
-}
-
-class ImageProductVariant {
-  @ApiProperty()
-  readonly id: string;
-
-  @ApiProperty()
-  readonly productVariantId: string;
-
-  @ApiProperty()
-  readonly picture: string;
-
-  @ApiProperty()
-  readonly alt: string;
-
-  @ApiProperty()
-  readonly isAvatar: string;
-
-  @ApiProperty()
-  readonly position: string;
 }
 
 class OrderDetail {
@@ -60,28 +22,10 @@ class OrderDetail {
   readonly id: string;
 
   @ApiProperty()
-  readonly productId: string;
-
-  @ApiProperty({ required: false })
-  readonly itemCode?: string;
+  readonly unitPrice: number;
 
   @ApiProperty()
-  readonly name: string;
-
-  @ApiProperty()
-  readonly price: number;
-
-  @ApiProperty({ required: false })
-  readonly volume?: number;
-
-  @ApiProperty({ required: false })
-  readonly flavor?: string;
-
-  @ApiProperty({ required: false })
-  readonly inStock?: number;
-
-  @ApiProperty({ type: [ImageProductVariant], required: false })
-  readonly images?: ImageProductVariant[];
+  readonly totalPrice: number;
 
   @ApiProperty({ type: [ToppingProduct], required: false })
   readonly toppings?: ToppingProduct[];
@@ -114,12 +58,6 @@ export class CreateOrderInput {
 
   @ApiProperty({ type: [OrderDetail] })
   readonly orderDetails: OrderDetail[];
-
-  @ApiProperty({ type: [ToppingProduct] })
-  readonly toppings: ToppingProduct[];
-
-  @ApiProperty({ required: false })
-  readonly ip: string;
 }
 
 export class OrderFilterInput {
@@ -142,7 +80,7 @@ export class OrderFilterInput {
   readonly createdAtFrom: Date;
 
   @ApiProperty()
-  readonly status: number[];
+  readonly arrStatus: number[];
 
   @ApiProperty()
   readonly page: number;

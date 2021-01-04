@@ -1,7 +1,7 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Product } from '../entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, getManager, In, Connection, Brackets } from 'typeorm';
+import { Repository, IsNull, getManager, In, Connection, Brackets, Not } from 'typeorm';
 import * as _ from 'lodash';
 import {
   CreateManyProductInput,
@@ -20,7 +20,7 @@ import { ProductTopping } from '../entities/productTopping.entity';
 import { Topping } from '../entities/topping.entity';
 import { OrderDetail } from '../entities/orderDetail.entity';
 import { CategoryBlog } from '../entities/categoryBlog.entity';
-import { convertTv } from '../lib/utils';
+import { changeAlias, convertTv } from '../lib/utils';
 
 @Injectable()
 export class ProductService {
@@ -67,7 +67,7 @@ export class ProductService {
   }
 
   async getProduct(id: string) {
-    this.logger.warn(`Running api getProduct at ${new Date()}`);
+    this.logger.debug(`Running api getProduct at ${new Date()}`);
     const product = await this.productRepository
       .createQueryBuilder('product')
       .where('"product"."id" = :id', { id: id })
@@ -94,6 +94,7 @@ export class ProductService {
         'product.id = product_topping.productId',
       )
       .leftJoinAndMapOne('product_topping.topping', Topping, 'topping', 'product_topping.toppingId = topping.id')
+      .orderBy('"product_variant".position', 'ASC')
       .cache(`product_${id}`)
       .getOne();
 
@@ -111,7 +112,7 @@ export class ProductService {
   }
 
   async getProducts(page = 1, limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE)) {
-    this.logger.warn(`Running api getProducts at ${new Date()}`);
+    this.logger.debug(`Running api getProducts at ${new Date()}`);
 
     const productsQuery = this.productRepository.createQueryBuilder('product');
     const productsCount = await productsQuery.cache(`products_count_page${page}_limit${limit}`).getCount();
@@ -152,7 +153,7 @@ export class ProductService {
   }
 
   async checkSlugIsExist(slug: string) {
-    this.logger.warn(`Running api checkSlugIsExist at ${new Date()}`);
+    this.logger.debug(`Running api checkSlugIsExist at ${new Date()}`);
     const productIsExist = await this.productRepository.findOne({
       where: {
         shortName: slug,
@@ -168,7 +169,7 @@ export class ProductService {
   }
 
   async createProduct(createProductInput: CreateProductInput) {
-    this.logger.warn(`Running api createProduct at ${new Date()}`);
+    this.logger.debug(`Running api createProduct at ${new Date()}`);
     let existSlug: any = await this.productRepository
       .createQueryBuilder('product')
       .where(`slugs::text like :slug`, { slug: `%"${createProductInput.slug}"%` })
@@ -280,9 +281,9 @@ export class ProductService {
       newProduct = await transactionalEntityManager.save<Product>(newProduct);
       const arrProductTopping = [];
       if (createProductInput.toppingIds?.length) {
-        for (let i = 0; i < createProductInput.toppingIds.length; i++) {
+        for (const toppingId of createProductInput.toppingIds) {
           let newProductTopping = new ProductTopping();
-          newProductTopping.toppingId = createProductInput.toppingIds[i];
+          newProductTopping.toppingId = toppingId;
           newProductTopping.productId = newProduct.id;
           arrProductTopping.push(newProductTopping);
         }
@@ -290,15 +291,15 @@ export class ProductService {
       }
 
       const arrProductCategory = [];
-      for (let i = 0; i < createProductInput.categoryIds.length; i++) {
+      for (const categoryId of createProductInput.categoryIds) {
         let newProductCategory = new ProductCategory();
-        newProductCategory.categoryId = createProductInput.categoryIds[i];
+        newProductCategory.categoryId = categoryId;
         newProductCategory.productId = newProduct.id;
         arrProductCategory.push(newProductCategory);
       }
       await transactionalEntityManager.save<ProductCategory[]>(arrProductCategory);
 
-      if (createProductInput.productPictures && createProductInput.productPictures.length > 0) {
+      if (createProductInput.productPictures?.length > 0) {
         for (let i = 0; i < createProductInput.productPictures.length; i++) {
           const productPictures = createProductInput.productPictures[i];
           newImageProduct = new ProductImage();
@@ -322,7 +323,7 @@ export class ProductService {
   }
 
   async createManyProduct(createManyProductInput: CreateManyProductInput) {
-    this.logger.warn(`Running api createManyProduct at ${new Date()}`);
+    this.logger.debug(`Running api createManyProduct at ${new Date()}`);
     let existSlug: any = await this.productRepository
       .createQueryBuilder('product')
       .where(`slugs::text like :slug`, { slug: `%"${createManyProductInput.slug}"%` })
@@ -400,10 +401,10 @@ export class ProductService {
       );
     }
 
-    for (let i = 0; i < createManyProductInput.productVariants.length; i++) {
+    for (const productVariant of createManyProductInput.productVariants) {
       const existItemCode = await this.productVariantRepository.findOne({
         where: {
-          itemCode: createManyProductInput.productVariants[i].itemCode,
+          itemCode: productVariant.itemCode,
         },
       });
       if (existItemCode) {
@@ -438,9 +439,9 @@ export class ProductService {
       newProduct = await transactionalEntityManager.save<Product>(newProduct);
       const arrProductTopping = [];
       if (createManyProductInput.toppingIds?.length) {
-        for (let i = 0; i < createManyProductInput.toppingIds.length; i++) {
+        for (const toppingId of createManyProductInput.toppingIds) {
           let newProductTopping = new ProductTopping();
-          newProductTopping.toppingId = createManyProductInput.toppingIds[i];
+          newProductTopping.toppingId = toppingId;
           newProductTopping.productId = newProduct.id;
           arrProductTopping.push(newProductTopping);
         }
@@ -448,9 +449,9 @@ export class ProductService {
       }
 
       const arrProductCategory = [];
-      for (let i = 0; i < createManyProductInput.categoryIds.length; i++) {
+      for (const categoryId of createManyProductInput.categoryIds) {
         let newProductCategory = new ProductCategory();
-        newProductCategory.categoryId = createManyProductInput.categoryIds[i];
+        newProductCategory.categoryId = categoryId;
         newProductCategory.productId = newProduct.id;
         arrProductCategory.push(newProductCategory);
       }
@@ -468,13 +469,10 @@ export class ProductService {
         await transactionalEntityManager.save<ProductImage>(arrImageProduct);
       }
 
-      for (let i = 0; i < createManyProductInput.productVariants.length; i++) {
+      for (const productVariant of createManyProductInput.productVariants) {
         let newProductVariant = new ProductVariant();
-        newProductVariant.setAttributes(createManyProductInput.productVariants[i]);
+        newProductVariant.setAttributes(productVariant);
         newProductVariant.productId = newProduct.id;
-        if (createManyProductInput.productVariants[i].avatar) {
-          newProductVariant.avatar = createManyProductInput.productVariants[i].avatar;
-        }
         newProductVariant = await this.productVariantRepository.save<ProductVariant>(newProductVariant);
       }
     });
@@ -483,7 +481,7 @@ export class ProductService {
   }
 
   async createProductVariant(createProductVariantInput: CreateProductVariantInput) {
-    this.logger.warn(`Running api createProductVariant at ${new Date()}`);
+    this.logger.debug(`Running api createProductVariant at ${new Date()}`);
     const existProduct = await this.productRepository.findOne({
       where: {
         id: createProductVariantInput.productId,
@@ -589,14 +587,13 @@ export class ProductService {
     }
     let newProductVariant = new ProductVariant();
     newProductVariant.setAttributes(createProductVariantInput);
-    newProductVariant.avatar = createProductVariantInput.avatar;
     newProductVariant = await this.productVariantRepository.save(newProductVariant);
     await this.connection.queryResultCache.clear();
     return { data: newProductVariant };
   }
 
   async updateProduct(id: string, updateProductInput: UpdateProductInput) {
-    this.logger.warn(`Running api updateProduct at ${new Date()}`);
+    this.logger.debug(`Running api updateProduct at ${new Date()}`);
     const existProduct = await this.productRepository.findOne({
       where: {
         id: id,
@@ -712,10 +709,10 @@ export class ProductService {
       removeProductCategory = _.difference(productCategories, updateProductInput.categoryIds);
       const addProductCategory = _.difference(updateProductInput.categoryIds, productCategories);
       if (addProductCategory.length > 0) {
-        for (let i = 0; i < addProductCategory.length; i++) {
+        for (const productCategory of addProductCategory) {
           const existCategory = await this.categoryRepository.findOne({
             where: {
-              id: addProductCategory[i],
+              id: productCategory,
               status: true,
               isProduct: true,
             },
@@ -730,7 +727,7 @@ export class ProductService {
             );
           }
           const newProductCategory = new ProductCategory();
-          newProductCategory.categoryId = addProductCategory[i];
+          newProductCategory.categoryId = productCategory;
           newProductCategory.productId = id;
           arrInsertProductCategory.push(newProductCategory);
         }
@@ -749,10 +746,10 @@ export class ProductService {
       removeProductTopping = _.difference(productToppingIds, updateProductInput.toppingIds);
       const addProductTopping: string[] = _.difference(updateProductInput.toppingIds, productToppingIds);
       if (addProductTopping.length > 0) {
-        for (let i = 0; i < addProductTopping.length; i++) {
+        for (const productTopping of addProductTopping) {
           const existTopping = await this.toppingRepository.findOne({
             where: {
-              id: addProductTopping[i],
+              id: productTopping,
             },
           });
           if (!existTopping) {
@@ -765,7 +762,7 @@ export class ProductService {
             );
           }
           const newProductTopping = new ProductTopping();
-          newProductTopping.toppingId = addProductTopping[i];
+          newProductTopping.toppingId = productTopping;
           newProductTopping.productId = id;
           arrInsertProductTopping.push(newProductTopping);
         }
@@ -800,7 +797,7 @@ export class ProductService {
   }
 
   async updateProductVariant(id: string, updateProductVariantInput: UpdateProductVariantInput) {
-    this.logger.warn(`Running api updateProductVariant at ${new Date()}`);
+    this.logger.debug(`Running api updateProductVariant at ${new Date()}`);
     const existProductVariant = await this.productVariantRepository.findOne({
       where: {
         id: id,
@@ -819,6 +816,7 @@ export class ProductService {
     const existItemCode = await this.productVariantRepository.findOne({
       where: {
         itemCode: updateProductVariantInput.itemCode,
+        id: Not(id),
       },
     });
     if (existItemCode) {
@@ -832,81 +830,12 @@ export class ProductService {
     }
 
     existProductVariant.setAttributes(updateProductVariantInput);
-
-    const productImages = await this.productImageRepository.find({
-      where: {
-        productVariantId: id,
-        isAvatar: false,
-      },
-    });
-
-    let productAvatar: ProductImage;
-    if (updateProductVariantInput.avatar) {
-      productAvatar = await this.productImageRepository.findOne({
-        where: {
-          productVariantId: id,
-          isAvatar: true,
-        },
-      });
-      productAvatar.picture = updateProductVariantInput.avatar;
-      productAvatar.alt = updateProductVariantInput.alt;
-    }
-
-    const currentProductImage = productImages.map(x => x.picture);
-    const inputProductImage = updateProductVariantInput.productPictures.map(x => x.picture);
-    const removeImageIds = _.difference(currentProductImage, inputProductImage);
-    const addImageIds = _.difference(inputProductImage, currentProductImage);
-    const updateImageIds = _.intersection(inputProductImage, currentProductImage);
-
-    const arrAddImage = [];
-    const arrUpdateImage = [];
-    for (let i = 0; i < updateProductVariantInput.productPictures.length; i++) {
-      if (addImageIds.includes(updateProductVariantInput.productPictures[i].picture)) {
-        const newProductImage = new ProductImage();
-        newProductImage.productId = id;
-        newProductImage.setAttributes(updateProductVariantInput.productPictures[i]);
-        newProductImage.position = updateProductVariantInput.productPictures[i].position
-          ? updateProductVariantInput.productPictures[i].position
-          : 0;
-        arrAddImage.push(newProductImage);
-      }
-      if (updateImageIds.includes(updateProductVariantInput.productPictures[i].picture)) {
-        const existProductImage = await this.productImageRepository.findOne({
-          where: {
-            picture: updateProductVariantInput.productPictures[i].picture,
-            productVariantId: id,
-          },
-        });
-        existProductImage.setAttributes(updateProductVariantInput.productPictures[i]);
-        existProductImage.position = updateProductVariantInput.productPictures[i].position
-          ? updateProductVariantInput.productPictures[i].position
-          : 0;
-        arrUpdateImage.push(existProductImage);
-      }
-    }
-
-    await getManager().transaction(async transactionalEntityManager => {
-      if (updateProductVariantInput.avatar) {
-        await transactionalEntityManager.save<ProductImage>(productAvatar);
-      }
-      if (updateProductVariantInput.productPictures) {
-        if (removeImageIds.length > 0) {
-          await transactionalEntityManager.update(
-            ProductImage,
-            { productVariantId: id, picture: In(removeImageIds) },
-            { deletedAt: new Date() },
-          );
-        }
-        await transactionalEntityManager.save<ProductImage>(arrAddImage);
-        await transactionalEntityManager.save<ProductImage>(arrUpdateImage);
-      }
-    });
-
+    await this.productVariantRepository.save(existProductVariant);
     return { data: existProductVariant };
   }
 
   async deleteProduct(id: string) {
-    this.logger.warn(`Running api deleteProduct at ${new Date()}`);
+    this.logger.debug(`Running api deleteProduct at ${new Date()}`);
     const product: any = await this.productRepository
       .createQueryBuilder('product')
       .where('"product"."id" = :id', { id: id })
@@ -936,8 +865,8 @@ export class ProductService {
     }
 
     if (product.productVariants) {
-      for (let i = 0; i < product.productVariants.length; i++) {
-        if (product.productVariants[i].orderDetail) {
+      for (const productVariant of product.productVariants) {
+        if (productVariant.orderDetail) {
           throw new HttpException(
             {
               statusCode: HttpStatus.NOT_FOUND,
@@ -967,26 +896,24 @@ export class ProductService {
       },
     });
 
-    const productVariantIds = productVariants.map(x => x.id);
-
     const existProductImage = await this.productImageRepository.find({
       where: {
-        productVariantId: In(productVariantIds),
+        productId: id,
       },
     });
     await getManager().transaction(async transactionalEntityManager => {
       await transactionalEntityManager.softRemove<Product>(product);
-      await transactionalEntityManager.softRemove<ProductCategory>(productCategories);
-      await transactionalEntityManager.softRemove<ProductVariant>(productVariants);
-      await transactionalEntityManager.softRemove<ProductTopping>(productToppings);
-      await transactionalEntityManager.softRemove<ProductImage>(existProductImage);
+      await transactionalEntityManager.softRemove<ProductCategory[]>(productCategories);
+      await transactionalEntityManager.softRemove<ProductVariant[]>(productVariants);
+      await transactionalEntityManager.softRemove<ProductTopping[]>(productToppings);
+      await transactionalEntityManager.softRemove<ProductImage[]>(existProductImage);
     });
     await this.connection.queryResultCache.clear();
     return { data: true };
   }
 
   async deleteProductVariant(id: string) {
-    this.logger.warn(`Running api deleteProductVariant at ${new Date()}`);
+    this.logger.debug(`Running api deleteProductVariant at ${new Date()}`);
     const existProductVariant = await this.productVariantRepository.findOne({
       where: {
         id: id,
@@ -1002,12 +929,6 @@ export class ProductService {
       );
     }
 
-    const existProductImage = await this.productImageRepository.find({
-      where: {
-        productVariantId: existProductVariant.id,
-      },
-    });
-
     const orderDetail: OrderDetail = await this.orderDetailRepository.findOne({
       where: {
         productVariantId: id,
@@ -1017,17 +938,14 @@ export class ProductService {
     if (orderDetail) {
       throw new HttpException(
         {
-          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          statusCode: HttpStatus.BAD_REQUEST,
           message: 'PRODUCT_VARIANT_NOT_ALLOW_DELETE',
         },
-        HttpStatus.UNPROCESSABLE_ENTITY,
+        HttpStatus.BAD_REQUEST,
       );
     }
 
-    await getManager().transaction(async transactionalEntityManager => {
-      await transactionalEntityManager.softRemove<ProductVariant>(existProductVariant);
-      await transactionalEntityManager.softRemove<ProductImage>(existProductImage);
-    });
+    await this.productVariantRepository.softRemove(existProductVariant);
     await this.connection.queryResultCache.clear();
     return { data: true };
   }
@@ -1113,10 +1031,10 @@ export class ProductService {
     let searchValueJoin = '';
 
     if (searchValue?.length > 0) {
-      for (let i = 0; i < searchValue.length; i++) {
-        searchValue[i] = searchValue[i].replace(/  +/g, '');
-        if (searchValue[i]) {
-          newSearchValue.push(convertTv(searchValue[i].trim()));
+      for (let value of searchValue) {
+        value = value.replace(/  +/g, '');
+        if (value) {
+          newSearchValue.push(convertTv(value.trim()));
         }
       }
       searchValueJoin = `%${newSearchValue.join(' ')}%`;
@@ -1202,10 +1120,10 @@ export class ProductService {
     let searchValueJoin = '';
 
     if (searchValue?.length > 0) {
-      for (let i = 0; i < searchValue.length; i++) {
-        searchValue[i] = searchValue[i].replace(/  +/g, '');
-        if (searchValue[i]) {
-          newSearchValue.push(convertTv(searchValue[i].trim()));
+      for (let value of searchValue) {
+        value = value.replace(/  +/g, '');
+        if (value) {
+          newSearchValue.push(convertTv(value.trim()));
         }
       }
       searchValueJoin = `%${newSearchValue.join(' ')}%`;
@@ -1276,5 +1194,105 @@ export class ProductService {
       totalRecords: count,
       data: products,
     };
+  }
+
+  parseBoolean(value: string) {
+    if (value === 'true') {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  async importProduct() {
+    const XLSX = require('xlsx');
+    const workbook = XLSX.readFile(`src/product/product.xlsx`);
+    const sheet_name_list = workbook.SheetNames;
+    const xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
+    console.log(xlData.length);
+    const toppings = await this.toppingRepository.find();
+    await getManager().transaction(async transactionalEntityManager => {
+      for (const product of xlData) {
+        let newProduct = new Product();
+        newProduct.allowSelectSugar = this.parseBoolean(product.allowSelectSugar);
+        newProduct.itemCode = product.itemCode;
+        newProduct.name = product.name;
+        newProduct.slugs = [];
+        newProduct.slugs.push(changeAlias(product.slugs));
+        newProduct.status = this.parseBoolean(product.status);
+        newProduct.numberToppingAllow = product.numberToppingAllow ? product.numberToppingAllow : 0;
+        newProduct.sellOutOfStock = this.parseBoolean(product.sellOutOfStock);
+        newProduct.toppingAvailable = this.parseBoolean(product.toppingAvailable);
+        newProduct.volume = product.volume ? parseInt(product.volume) : null;
+        newProduct.flavor = product.flavor ? product.flavor : null;
+        newProduct.inStock = product.inStock;
+        newProduct.price = parseInt(product.price);
+        newProduct = await transactionalEntityManager.save<Product>(newProduct);
+        if (product.Image) {
+          const images = product.Image.split('|');
+          for (let i = 0; i < images.length; i++) {
+            const newProductImage = new ProductImage();
+            newProductImage.picture = images[i];
+            newProductImage.position = i + 1;
+            newProductImage.productId = newProduct.id;
+            newProductImage.isAvatar = i === 0 ? true : false;
+            await transactionalEntityManager.save<ProductImage>(newProductImage);
+          }
+        }
+        const newProductCategory = new ProductCategory();
+        newProductCategory.productId = newProduct.id;
+        newProductCategory.categoryId = product.categories;
+        await transactionalEntityManager.save<ProductCategory>(newProductCategory);
+        for (const topping of toppings) {
+          const newToppingProduct = new ProductTopping();
+          newToppingProduct.productId = newProduct.id;
+          newToppingProduct.toppingId = topping.id;
+          await transactionalEntityManager.save<ProductTopping>(newToppingProduct);
+        }
+      }
+    });
+    return;
+  }
+
+  async importProductVariant() {
+    const XLSX = require('xlsx');
+    const workbook = XLSX.readFile(`src/product/product_variant.xlsx`);
+    const sheet_name_list = workbook.SheetNames;
+    const xlData = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
+    console.log(xlData.length);
+    const arrProductVariant = [];
+    let i = 0;
+    let productCode = 'SP0001';
+    for (const productVariant of xlData) {
+      if (productCode === productVariant.productId.trim()) {
+        i++;
+      } else {
+        productCode = productVariant.productId;
+        i = 1;
+      }
+      const existProduct = await this.productRepository.findOne({
+        where: {
+          itemCode: productVariant.productId,
+        },
+      });
+
+      const newProductVariant = new ProductVariant();
+      newProductVariant.productId = existProduct.id;
+      newProductVariant.itemCode = productVariant.itemCode;
+      newProductVariant.name = productVariant.name;
+      newProductVariant.price = productVariant.price;
+      newProductVariant.position = i;
+      if (productVariant.volume) {
+        newProductVariant.volume = parseInt(productVariant.volume.replace('ml', ''));
+      }
+      newProductVariant.inStock = productVariant.inStock;
+      newProductVariant.flavor = productVariant.flavor;
+      newProductVariant.avatar = productVariant.avatar ? productVariant.avatar : null;
+      newProductVariant.unit = 'chai';
+      arrProductVariant.push(newProductVariant);
+    }
+    await getManager().transaction(async transactionalEntityManager => {
+      await transactionalEntityManager.save(arrProductVariant);
+    });
   }
 }

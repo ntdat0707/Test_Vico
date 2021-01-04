@@ -1,6 +1,27 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import {
+  CREATE_CATEGORY_BLOG,
+  DELETE_CATEGORY_BLOG,
+  GET_CATEGORY_BLOG_DETAIL,
+  UPDATE_CATEGORY_BLOG,
+} from '../role/codePermission';
+import { Roles } from '../role/role.decorators';
+import { RolesGuard } from '../role/roles.guard';
 import { CreateCategoryBlogPipe } from '../lib/validatePipe/category-blog/createCategoryBlogPipe.class';
 import { UpdateCategoryBlogPipe } from '../lib/validatePipe/category-blog/updateCategoryBlogPipe.class';
 import { CheckUnSignIntPipe } from '../lib/validatePipe/checkIntegerPipe.class';
@@ -14,6 +35,9 @@ export class CategoryBlogController {
   constructor(private categoryBlogService: CategoryBlogService) {}
 
   @Get(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([GET_CATEGORY_BLOG_DETAIL])
   async getCategoryBlog(@Param('id', new CheckUUID()) id: string) {
     return await this.categoryBlogService.getCategoryBlog(id);
   }
@@ -50,6 +74,9 @@ export class CategoryBlogController {
   @ApiBody({
     type: CreateCategoryBlogInput,
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([CREATE_CATEGORY_BLOG])
   async createCategoryBlog(
     @UploadedFile() categoryBlogPicture: any,
     @Body(new CreateCategoryBlogPipe()) createCategoryBlogInput: CreateCategoryBlogInput,
@@ -63,6 +90,9 @@ export class CategoryBlogController {
   @ApiBody({
     type: UpdateCategoryBlogInput,
   })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([UPDATE_CATEGORY_BLOG])
   async updateCategoryBlog(
     @Param('id', new CheckUUID()) id: string,
     @UploadedFile() categoryBlogPicture: any,
@@ -72,6 +102,9 @@ export class CategoryBlogController {
   }
 
   @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([DELETE_CATEGORY_BLOG])
   async deleteCategoryBlog(@Param('id', new CheckUUID()) id: string) {
     return this.categoryBlogService.deleteCategoryBlog(id);
   }

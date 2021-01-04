@@ -8,17 +8,17 @@ export function mapDataOrder(rawData: any) {
         isExist = true;
         if (row.order_detail_id) {
           let isExistImage = false;
-          for (let i = 0; i < order.orderDetails.length; i++) {
-            if (row.product_view_product_variant_id === order.orderDetails[i].productVariant.id) {
+          for (const orderDetail of order.orderDetails) {
+            if (row.product_view_product_variant_id === orderDetail.productVariant.id) {
               isExistImage = true;
               let isExistDuplicateImage = false;
-              for (let j = 0; j < order.orderDetails[i].productVariant.images.length; j++) {
-                if (row.product_view_image_picture === order.orderDetails[i].productVariant.images[j].picture) {
+              for (const image of orderDetail.productVariant.images) {
+                if (row.product_view_image_picture === image.picture) {
                   isExistDuplicateImage = true;
                 }
               }
               if (!isExistDuplicateImage) {
-                order.orderDetails[i].productVariant.images.push({
+                orderDetail.productVariant.images.push({
                   id: row.product_view_image_id,
                   productVariantId: row.product_view_image_product_variant_id,
                   picture: row.product_view_image_picture,

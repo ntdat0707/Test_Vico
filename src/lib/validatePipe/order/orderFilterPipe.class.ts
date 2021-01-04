@@ -6,15 +6,15 @@ import { OrderFilterInput } from '../../../order/order.dto';
 @Injectable()
 export class OrderFilterPipe implements PipeTransform<any> {
   async transform(value: OrderFilterInput) {
-    if (value.status && value.status.length > 0) {
-      for (let i = 0; i < value.status.length; i++) {
-        if (!Number.isInteger(value.status[i])) {
+    if (value.arrStatus?.length > 0) {
+      for (const status of value.arrStatus) {
+        if (!Number.isInteger(status)) {
           throw new HttpException(
             {
-              statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+              statusCode: HttpStatus.BAD_REQUEST,
               message: 'STATUS_NOT_VALID',
             },
-            HttpStatus.UNPROCESSABLE_ENTITY,
+            HttpStatus.BAD_REQUEST,
           );
         }
       }
@@ -36,10 +36,10 @@ export class OrderFilterPipe implements PipeTransform<any> {
       if (!Number.isInteger(value.minOrderAmount)) {
         throw new HttpException(
           {
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            statusCode: HttpStatus.BAD_REQUEST,
             message: 'STATUS_NOT_VALID',
           },
-          HttpStatus.UNPROCESSABLE_ENTITY,
+          HttpStatus.BAD_REQUEST,
         );
       }
     }
@@ -47,10 +47,10 @@ export class OrderFilterPipe implements PipeTransform<any> {
       if (!Number.isInteger(value.maxOrderAmount)) {
         throw new HttpException(
           {
-            statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+            statusCode: HttpStatus.BAD_REQUEST,
             message: 'STATUS_NOT_VALID',
           },
-          HttpStatus.UNPROCESSABLE_ENTITY,
+          HttpStatus.BAD_REQUEST,
         );
       }
     }

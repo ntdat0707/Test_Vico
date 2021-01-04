@@ -8,18 +8,18 @@ export function mapProductView(rows: any[]) {
         isExist = true;
         if (row.product_variant_id) {
           let isExistVariant = false;
-          for (let i = 0; i < product.variants.length; i++) {
-            if (row.product_variant_id === product.variants[i].id) {
+          for (const variant of product.variants) {
+            if (row.product_variant_id === variant.id) {
               isExistVariant = true;
               let isExistDuplicateImage = false;
-              for (let j = 0; j < product.variants[i].images.length; j++) {
-                if (row.image_picture === product.variants[i].images[j].picture) {
+              for (const image of variant.images) {
+                if (row.image_picture === image.picture) {
                   isExistDuplicateImage = true;
                 }
               }
               if (!isExistDuplicateImage) {
                 if (row.image_id) {
-                  product.variants[i].images.push({
+                  variant.images.push({
                     id: row.image_id,
                     productVariantId: row.image_product_variant_id,
                     picture: row.image_picture,
@@ -117,7 +117,12 @@ export function mapProductView(rows: any[]) {
         metaDescription: row.product_meta_description,
         alt: row.product_alt,
         numberFavorite: row.product_favorite,
-        numberReview: row.product_star_one + row.product_star_two + row.product_star_three + row.product_star_four + row.product_star_five,
+        numberReview:
+          row.product_star_one +
+          row.product_star_two +
+          row.product_star_three +
+          row.product_star_four +
+          row.product_star_five,
         rate: row.product_rate,
       };
       newProduct.brand = row.brand_id

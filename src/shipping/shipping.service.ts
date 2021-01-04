@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Customer } from 'src/entities/customer.entity';
-import { Shipping } from 'src/entities/shipping.entity';
+import { Customer } from '../entities/customer.entity';
+import { Shipping } from '../entities/shipping.entity';
 import { Connection, getManager, Repository } from 'typeorm';
 import { CreateShippingInput, UpdateShippingInput } from './shipping.dto';
 
@@ -17,7 +17,7 @@ export class ShippingService {
   ) {}
 
   async getShippingById(customerId: string, id: string) {
-    this.logger.warn(`Running api getShippingById at ${new Date()}`);
+    this.logger.debug(`Running api getShippingById at ${new Date()}`);
     const existShipping = await this.shippingRepository.findOne({
       where: {
         id: id,
@@ -38,7 +38,7 @@ export class ShippingService {
   }
 
   async getShippingByCustomerId(customerId: string) {
-    this.logger.warn(`Running api getShippingByCustomerId at ${new Date()}`);
+    this.logger.debug(`Running api getShippingByCustomerId at ${new Date()}`);
     const existShipping = await this.shippingRepository.find({
       where: {
         customerId: customerId,
@@ -49,7 +49,7 @@ export class ShippingService {
   }
 
   async createShipping(customerId: string, createShippingInput: CreateShippingInput) {
-    this.logger.warn(`Running api createShipping at ${new Date()}`);
+    this.logger.debug(`Running api createShipping at ${new Date()}`);
 
     const countShipping = await this.shippingRepository.count({
       where: {
@@ -87,7 +87,7 @@ export class ShippingService {
   }
 
   async updateShipping(customerId: string, id: string, updateShippingInput: UpdateShippingInput) {
-    this.logger.warn(`Running api updateShipping at ${new Date()}`);
+    this.logger.debug(`Running api updateShipping at ${new Date()}`);
 
     const existShipping = await this.shippingRepository.findOne({
       where: {
@@ -112,7 +112,7 @@ export class ShippingService {
   }
 
   async setShippingDefault(customerId: string, id: string) {
-    this.logger.warn(`Running api setShippingDefault at ${new Date()}`);
+    this.logger.debug(`Running api setShippingDefault at ${new Date()}`);
 
     const existShipping = await this.shippingRepository.findOne({
       where: {
@@ -136,7 +136,7 @@ export class ShippingService {
   }
 
   async deleteShipping(customerId: string, id: string) {
-    this.logger.warn(`Running api deleteShipping at ${new Date()}`);
+    this.logger.debug(`Running api deleteShipping at ${new Date()}`);
 
     const existShipping = await this.shippingRepository.findOne({
       where: {

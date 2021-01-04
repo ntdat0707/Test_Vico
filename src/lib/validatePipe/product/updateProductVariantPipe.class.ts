@@ -40,29 +40,6 @@ export class UpdateProductVariantPipe implements PipeTransform<any> {
       }
     }
 
-    if (value.productPictures) {
-      if (!value.avatar) {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.BAD_REQUEST,
-            message: 'AVATAR_REQUIRED',
-          },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      for (let i = 0; i < value.productPictures.length; i++) {
-        if (!value.productPictures[i].picture) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'PICTURE_REQUIRED',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-      }
-    }
-
     return value;
   }
 }

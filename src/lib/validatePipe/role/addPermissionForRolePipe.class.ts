@@ -25,8 +25,8 @@ export class AddPermissionForRolePipe implements PipeTransform<any> {
       );
     }
     if (value.permissionIds) {
-      for (let i = 0; i < value.permissionIds.length; i++) {
-        if (!checkUUID(value.permissionIds[i])) {
+      for (const permissionId of value.permissionIds) {
+        if (!checkUUID(permissionId)) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,

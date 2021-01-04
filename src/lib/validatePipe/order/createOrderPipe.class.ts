@@ -1,8 +1,7 @@
 import { PipeTransform, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { checkUUID } from '../../pipeUtils/uuidValidate';
-import { CreateOrderInput } from 'src/order/order.dto';
-import { EOrderSource, EPaymentType } from 'src/lib/constant';
-import { checkIpAddress } from '../../../lib/pipeUtils/ipAddressValidate';
+import { CreateOrderInput } from '../../../order/order.dto';
+import { EOrderSource, EPaymentType } from '../../../lib/constant';
 
 @Injectable()
 export class CreateOrderPipe implements PipeTransform<any> {
@@ -122,7 +121,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
       );
     }
 
-    if ((!value.orderDetails || value.orderDetails.length === 0) && (!value.toppings || value.toppings.length === 0)) {
+    if (!value.orderDetails || value.orderDetails.length === 0) {
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,
@@ -132,21 +131,9 @@ export class CreateOrderPipe implements PipeTransform<any> {
       );
     }
 
-    if (value.ip) {
-      if (!checkIpAddress(value.ip)) {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.BAD_REQUEST,
-            message: 'IP_ADDRESS_NOT_VALID',
-          },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-    }
-
     if (value.orderDetails?.length > 0) {
-      for (let i = 0; i < value.orderDetails.length; i++) {
-        if (!value.orderDetails[i].discount && value.orderDetails[i].discount !== 0) {
+      for (const orderDetail of value.orderDetails) {
+        if (!orderDetail.discount && orderDetail.discount !== 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -155,7 +142,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
             HttpStatus.BAD_REQUEST,
           );
         }
-        if (!Number.isInteger(value.orderDetails[i].discount) && value.orderDetails[i].discount < 0) {
+        if (!Number.isInteger(orderDetail.discount) && orderDetail.discount < 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -165,7 +152,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
           );
         }
 
-        if (!value.orderDetails[i].quantity && value.orderDetails[i].quantity !== 0) {
+        if (!orderDetail.quantity && orderDetail.quantity !== 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -174,7 +161,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
             HttpStatus.BAD_REQUEST,
           );
         }
-        if (!Number.isInteger(value.orderDetails[i].quantity) && value.orderDetails[i].quantity < 0) {
+        if (!Number.isInteger(orderDetail.quantity) && orderDetail.quantity < 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -184,7 +171,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
           );
         }
 
-        if (!value.orderDetails[i].id) {
+        if (!orderDetail.id) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -193,7 +180,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
             HttpStatus.BAD_REQUEST,
           );
         }
-        if (!checkUUID(value.orderDetails[i].id)) {
+        if (!checkUUID(orderDetail.id)) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -203,91 +190,47 @@ export class CreateOrderPipe implements PipeTransform<any> {
           );
         }
 
-        if (!value.orderDetails[i].productId) {
+        if (!orderDetail.totalPrice && orderDetail.totalPrice !== 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
-              message: 'PRODUCT_ID_REQUIRED',
+              message: 'TOTAL_PRICE_REQUIRED',
             },
             HttpStatus.BAD_REQUEST,
           );
         }
-        if (!checkUUID(value.orderDetails[i].productId)) {
+        if (!Number.isInteger(orderDetail.totalPrice) && orderDetail.totalPrice < 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
-              message: 'PRODUCT_ID_INVALID',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-
-        if (!value.orderDetails[i].itemCode) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'PRODUCT_ID_REQUIRED',
+              message: 'TOTAL_PRICE_INVALID',
             },
             HttpStatus.BAD_REQUEST,
           );
         }
 
-        if (!value.orderDetails[i].name) {
+        if (!orderDetail.unitPrice && orderDetail.unitPrice !== 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
-              message: 'PRODUCT_ID_REQUIRED',
+              message: 'UNIT_PRICE_REQUIRED',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        if (!Number.isInteger(orderDetail.unitPrice) && orderDetail.unitPrice < 0) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'UNIT_PRICE_INVALID',
             },
             HttpStatus.BAD_REQUEST,
           );
         }
 
-        if (!value.orderDetails[i].price && value.orderDetails[i].price !== 0) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'PRICE_REQUIRED',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-        if (!Number.isInteger(value.orderDetails[i].price) && value.orderDetails[i].price < 0) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'PRICE_INVALID',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-
-        if (value.orderDetails[i].volume) {
-          if (!Number.isInteger(value.orderDetails[i].volume) && value.orderDetails[i].volume < 0) {
-            throw new HttpException(
-              {
-                statusCode: HttpStatus.BAD_REQUEST,
-                message: 'VOLUME_INVALID',
-              },
-              HttpStatus.BAD_REQUEST,
-            );
-          }
-        }
-
-        if (value.orderDetails[i].inStock) {
-          if (!Number.isInteger(value.orderDetails[i].inStock) && value.orderDetails[i].inStock < 0) {
-            throw new HttpException(
-              {
-                statusCode: HttpStatus.BAD_REQUEST,
-                message: 'IN_STOCK_INVALID',
-              },
-              HttpStatus.BAD_REQUEST,
-            );
-          }
-        }
-
-        if (value.orderDetails[i].toppings?.length > 0) {
-          for (let j = 0; j < value.orderDetails[i].toppings.length; j++) {
-            if (!value.orderDetails[i].toppings[j].id) {
+        if (orderDetail.toppings?.length > 0) {
+          for (const topping of orderDetail.toppings) {
+            if (!topping.id) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -296,7 +239,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
                 HttpStatus.BAD_REQUEST,
               );
             }
-            if (!checkUUID(value.orderDetails[i].toppings[j].id)) {
+            if (!checkUUID(topping.id)) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -305,27 +248,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
                 HttpStatus.BAD_REQUEST,
               );
             }
-
-            if (!value.orderDetails[i].toppings[j].categoryId) {
-              throw new HttpException(
-                {
-                  statusCode: HttpStatus.BAD_REQUEST,
-                  message: 'CATEGORY_ID_REQUIRED',
-                },
-                HttpStatus.BAD_REQUEST,
-              );
-            }
-            if (!checkUUID(value.orderDetails[i].toppings[j].categoryId)) {
-              throw new HttpException(
-                {
-                  statusCode: HttpStatus.BAD_REQUEST,
-                  message: 'CATEGORY_ID_INVALID',
-                },
-                HttpStatus.BAD_REQUEST,
-              );
-            }
-
-            if (!value.orderDetails[i].toppings[j].price && value.orderDetails[i].toppings[j].price !== 0) {
+            if (!topping.price && topping.price !== 0) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -334,10 +257,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
                 HttpStatus.BAD_REQUEST,
               );
             }
-            if (
-              !Number.isInteger(value.orderDetails[i].toppings[j].price) &&
-              value.orderDetails[i].toppings[j].price < 0
-            ) {
+            if (!Number.isInteger(topping.price) && topping.price < 0) {
               throw new HttpException(
                 {
                   statusCode: HttpStatus.BAD_REQUEST,
@@ -346,109 +266,7 @@ export class CreateOrderPipe implements PipeTransform<any> {
                 HttpStatus.BAD_REQUEST,
               );
             }
-
-            if (!value.orderDetails[i].toppings[j].inStock && value.orderDetails[i].toppings[j].inStock !== 0) {
-              throw new HttpException(
-                {
-                  statusCode: HttpStatus.BAD_REQUEST,
-                  message: 'IN_STOCK_REQUIRED',
-                },
-                HttpStatus.BAD_REQUEST,
-              );
-            }
-            if (
-              !Number.isInteger(value.orderDetails[i].toppings[j].inStock) &&
-              value.orderDetails[i].toppings[j].inStock < 0
-            ) {
-              throw new HttpException(
-                {
-                  statusCode: HttpStatus.BAD_REQUEST,
-                  message: 'IN_STOCK_INVALID',
-                },
-                HttpStatus.BAD_REQUEST,
-              );
-            }
           }
-        }
-      }
-    }
-
-    if (value.toppings?.length > 0) {
-      for (let i = 0; i < value.toppings.length; i++) {
-        if (!value.toppings[i].id) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'ID_REQUIRED',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-        if (!checkUUID(value.toppings[i].id)) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'ID_INVALID',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-
-        if (!value.toppings[i].categoryId) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'CATEGORY_ID_REQUIRED',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-        if (!checkUUID(value.toppings[i].categoryId)) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'CATEGORY_ID_INVALID',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-
-        if (!value.toppings[i].price && value.toppings[i].price !== 0) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'PRICE_REQUIRED',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-        if (!Number.isInteger(value.toppings[i].price) && value.toppings[i].price < 0) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'PRICE_INVALID',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-
-        if (!value.toppings[i].inStock && value.toppings[i].inStock !== 0) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'IN_STOCK_REQUIRED',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-        if (!Number.isInteger(value.toppings[i].inStock) && value.toppings[i].inStock < 0) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'IN_STOCK_INVALID',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
         }
       }
     }

@@ -4,6 +4,9 @@ export class CreateCategoryInput {
   @ApiProperty()
   readonly name: string;
 
+  @ApiProperty()
+  readonly code: string;
+
   @ApiProperty({ type: 'string', format: 'binary', required: false })
   readonly categoryPicture?: any;
 
@@ -20,7 +23,7 @@ export class CreateCategoryInput {
   readonly slug: string;
 
   @ApiProperty({ required: false })
-  readonly title: string;
+  readonly alt: string;
 
   @ApiProperty()
   readonly pageTitle: string;
@@ -46,13 +49,10 @@ export class UpdateCategoryInput {
   readonly metaDescription?: string;
 
   @ApiProperty({ required: false })
-  isProduct: boolean;
-
-  @ApiProperty({ required: false })
   readonly slug: string;
 
   @ApiProperty({ required: false })
-  readonly title: string;
+  readonly alt: string;
 
   @ApiProperty({ required: false })
   readonly pageTitle: string;
@@ -62,4 +62,17 @@ export class UpdateCategoryInput {
 
   @ApiProperty({ type: Boolean, required: false })
   status?: boolean;
+}
+
+class PositionCategory {
+  @ApiProperty({ required: true })
+  readonly categoryId: string;
+
+  @ApiProperty({ required: true })
+  readonly position: number;
+}
+
+export class SettingPositionCategoryInput {
+  @ApiProperty({ required: true, type: [PositionCategory] })
+  readonly categoryPositions: PositionCategory[];
 }

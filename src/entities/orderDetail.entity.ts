@@ -8,9 +8,6 @@ export class OrderDetail {
   @Column('uuid', { nullable: true })
   productVariantId: string;
 
-  @Column('uuid', { nullable: true })
-  toppingId: string;
-
   @Column('integer')
   quantity: number;
 
@@ -35,7 +32,7 @@ export class OrderDetail {
   setAttributes(object: any) {
     if (object.id !== undefined) this.productVariantId = object.id;
     if (object.quantity || object.quantity === 0) this.quantity = parseInt(object.quantity);
-    if (object.price || object.price === 0) this.unitPrice = parseInt(object.price);
+    if (object.totalPrice || object.totalPrice === 0) this.unitPrice = parseInt(object.totalPrice);
     if (object.discount || object.discount === 0) this.discount = parseInt(object.discount);
   }
 }

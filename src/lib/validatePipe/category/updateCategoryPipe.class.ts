@@ -8,7 +8,6 @@ import * as moment from 'moment';
 export class UpdateCategoryPipe implements PipeTransform<any> {
   async transform(value: UpdateCategoryInput) {
     value.status = isTrueSet(value.status);
-    value.isProduct = isTrueSet(value.isProduct);
     if (value.slug) {
       if (!checkSlug(value.slug)) {
         throw new HttpException(

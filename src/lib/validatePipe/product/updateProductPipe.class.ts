@@ -7,9 +7,9 @@ import { checkSlug } from '../../../lib/pipeUtils/slugValidate';
 @Injectable()
 export class UpdateProductPipe implements PipeTransform<any> {
   async transform(value: UpdateProductInput) {
-    if (value.categoryIds && value.categoryIds.length > 0) {
-      for (let i = 0; i < value.categoryIds.length; i++) {
-        if (!checkUUID(value.categoryIds[i])) {
+    if (value.categoryIds?.length > 0) {
+      for (const categoryId of value.categoryIds) {
+        if (!checkUUID(categoryId)) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -20,9 +20,9 @@ export class UpdateProductPipe implements PipeTransform<any> {
         }
       }
     }
-    if (value.toppingIds && value.toppingIds.length > 0) {
-      for (let i = 0; i < value.toppingIds.length; i++) {
-        if (!checkUUID(value.toppingIds[i])) {
+    if (value.toppingIds?.length > 0) {
+      for (const toppingId of value.toppingIds) {
+        if (!checkUUID(toppingId)) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,

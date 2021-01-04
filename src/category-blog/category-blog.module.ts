@@ -10,10 +10,14 @@ import * as shortid from 'shortid';
 import { Product } from '../entities/product.entity';
 import { Category } from '../entities/category.entity';
 import { Blog } from '../entities/blog.entity';
+import { RoleService } from '../role/role.service';
+import { Permission } from '../entities/permission.entity';
+import { PermissionRole } from '../entities/permissionRole.entity';
+import { Role } from '../entities/role.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CategoryBlog, Product, Category, Blog]),
+    TypeOrmModule.forFeature([CategoryBlog, Product, Category, Blog, Role, Permission, PermissionRole]),
     MulterModule.registerAsync({
       useFactory: () => ({
         storage: diskStorage({
@@ -35,6 +39,6 @@ import { Blog } from '../entities/blog.entity';
     }),
   ],
   controllers: [CategoryBlogController],
-  providers: [CategoryBlogService],
+  providers: [CategoryBlogService, RoleService],
 })
 export class CategoryBlogModule {}

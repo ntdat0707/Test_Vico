@@ -87,6 +87,9 @@ export class Blog {
   @Column('timestamptz', { nullable: true })
   timePublication: string;
 
+  @Column('varchar', { nullable: true })
+  shortDescription: string;
+
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', select: true })
   createdAt: Date;
 
@@ -97,10 +100,10 @@ export class Blog {
   deletedAt: Date;
 
   setAttributes(object: any) {
-    if (object.title !== undefined) this.title = object.title;
+    if (object.title) this.title = object.title;
     if (object.pageTitle !== undefined) this.pageTitle = object.pageTitle;
     if (object.imageFeatured !== undefined) this.imageFeatured = object.imageFeatured;
-    if (object.content !== undefined) this.content = object.content;
+    if (object.content) this.content = object.content;
     if (object.type !== undefined) this.type = object.type;
     if (object.authorId) this.authorId = object.authorId;
     if (object.categoryBlogId) this.categoryBlogId = object.categoryBlogId;
@@ -108,5 +111,6 @@ export class Blog {
     if (object.status === true || object.status === false) this.status = object.status;
     if (object.metaDescription !== undefined) this.metaDescription = object.metaDescription;
     if (object.timePublication || object.timePublication === null) this.timePublication = object.timePublication;
+    if (object.shortDescription) this.shortDescription = object.shortDescription;
   }
 }

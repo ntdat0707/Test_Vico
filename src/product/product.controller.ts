@@ -36,7 +36,19 @@ import { CheckUnSignIntPipe } from '../lib/validatePipe/checkIntegerPipe.class';
 import { ConvertArray } from '../lib/validatePipe/convertArrayPipe.class';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FilterProductAdminPipe } from '../lib/validatePipe/product/filterProductAdminPipe.class';
-
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import {
+  CREATE_MANY_PRODUCT,
+  CREATE_PRODUCT,
+  CREATE_PRODUCT_VARIANT,
+  DELETE_PRODUCT,
+  DELETE_PRODUCT_VARIANT,
+  FILTER_PRODUCT_ADMIN,
+  UPDATE_PRODUCT,
+  UPDATE_PRODUCT_VARIANT,
+} from '../role/codePermission';
+import { Roles } from '../role/role.decorators';
+import { RolesGuard } from '../role/roles.guard';
 @Controller('product')
 @ApiTags('Product')
 @UseFilters(new HttpExceptionFilter())
@@ -84,21 +96,33 @@ export class ProductController {
   @ApiBody({
     type: FileUploadInput,
   })
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([CREATE_PRODUCT,UPDATE_PRODUCT])
   async uploadImage(@UploadedFile() image: any) {
     return await this.productService.uploadImage(image);
   }
 
   @Post()
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([CREATE_PRODUCT])
   async createProduct(@Body(new CreateProductPipe()) createProductInput: CreateProductInput) {
     return await this.productService.createProduct(createProductInput);
   }
 
   @Post('create-many-product')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([CREATE_MANY_PRODUCT])
   async createManyProduct(@Body(new CreateManyProductPipe()) createManyProductInput: CreateManyProductInput) {
     return await this.productService.createManyProduct(createManyProductInput);
   }
 
   @Post('create-product-variant')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([CREATE_PRODUCT_VARIANT])
   async createProductVariant(
     @Body(new CreateProductVariantPipe()) createProductVariantInput: CreateProductVariantInput,
   ) {
@@ -106,6 +130,9 @@ export class ProductController {
   }
 
   @Put(':id')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([UPDATE_PRODUCT])
   async updateProduct(
     @Param('id', new CheckUUID()) id: string,
     @Body(new UpdateProductPipe()) updateProductInput: UpdateProductInput,
@@ -114,6 +141,9 @@ export class ProductController {
   }
 
   @Put('update-product-variant/:id')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([UPDATE_PRODUCT_VARIANT])
   async updateProductVariant(
     @Param('id', new CheckUUID()) id: string,
     @Body(new UpdateProductVariantPipe()) updateProductVariantInput: UpdateProductVariantInput,
@@ -122,17 +152,42 @@ export class ProductController {
   }
 
   @Delete(':id')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([DELETE_PRODUCT])
   async deleteProduct(@Param('id', new CheckUUID()) id: string) {
     return await this.productService.deleteProduct(id);
   }
 
   @Delete('/delete-product-variant/:id')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([DELETE_PRODUCT_VARIANT])
   async deleteProductVariant(@Param('id', new CheckUUID()) id: string) {
     return await this.productService.deleteProductVariant(id);
   }
 
   @Post('admin/filter-product')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([FILTER_PRODUCT_ADMIN])
   async filterProductAdmin(@Body(new FilterProductAdminPipe()) filterProductAdminInput: FilterProductAdminInput) {
     return await this.productService.filterProductAdmin(filterProductAdminInput);
   }
+
+  // @Post('import-product')
+  // // @ApiBearerAuth()
+  // // @UseGuards(JwtAuthGuard, RolesGuard)
+  // // @Roles([CREATE_PRODUCT_VARIANT])
+  // async importProduct() {
+  //   return await this.productService.importProduct();
+  // }
+
+  // @Post('import-product-variant')
+  // // @ApiBearerAuth()
+  // // @UseGuards(JwtAuthGuard, RolesGuard)
+  // // @Roles([CREATE_PRODUCT_VARIANT])
+  // async importProductVariant() {
+  //   return await this.productService.importProductVariant();
+  // }
 }

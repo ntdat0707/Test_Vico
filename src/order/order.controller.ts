@@ -11,6 +11,8 @@ import { CheckUnSignIntPipe } from '../lib/validatePipe/checkIntegerPipe.class';
 import { CheckUUID } from '../lib/validatePipe/uuidPipe.class';
 import { UpdateOrderPipe } from '../lib/validatePipe/order/updateOrderPipe.class';
 import { OrderFilterPipe } from '../lib/validatePipe/order/orderFilterPipe.class';
+import { Roles } from '../role/role.decorators';
+import { FILTER_ORDER, GET_ORDERS } from '../role/codePermission';
 
 @Controller('orders')
 @ApiTags('Order')
@@ -23,6 +25,9 @@ export class OrderController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([GET_ORDERS])
   async getOrders(
     @Query('page', new CheckUnSignIntPipe()) page: number,
     @Query('limit', new CheckUnSignIntPipe()) limit: number,
@@ -60,13 +65,14 @@ export class OrderController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  createOrder(@GetUser() customerId: string, @Body(new CreateOrderPipe()) createOrderInput: CreateOrderInput) {
+  createOrder(@GetUser('userId') customerId: string, @Body(new CreateOrderPipe()) createOrderInput: CreateOrderInput) {
     return this.orderService.createOrder(customerId, createOrderInput);
   }
 
   @Post('order-filter')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([FILTER_ORDER])
   async orderFilter(@Body(new OrderFilterPipe()) filterOrderInput: OrderFilterInput) {
     return await this.orderService.orderFilter(filterOrderInput);
   }

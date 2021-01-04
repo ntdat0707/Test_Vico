@@ -22,6 +22,9 @@ export class ProductVariant {
   @Column('varchar', { nullable: true })
   flavor: string;
 
+  @Column('varchar', { nullable: true })
+  unit: string;
+
   @Column('integer', { default: 0 })
   inStock: number;
 
@@ -30,6 +33,9 @@ export class ProductVariant {
 
   @Column('varchar', { nullable: true })
   alt: string;
+
+  @Column('integer', { nullable: true })
+  position: number;
 
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', select: false })
   createdAt: Date;
@@ -44,6 +50,7 @@ export class ProductVariant {
     if (object.productId) this.productId = object.productId;
     if (object.itemCode) this.itemCode = object.itemCode;
     if (object.name) this.name = object.name;
+    if (object.unit !== undefined) this.unit = object.unit;
     if (object.price || object.price === 0) this.price = parseInt(object.price);
     if (object.volume || object.volume === null) this.volume = object.volume;
     if (object.flavor || object.flavor === null) this.flavor = object.flavor;
