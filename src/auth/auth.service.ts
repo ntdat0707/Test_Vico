@@ -1,7 +1,7 @@
 import { Injectable, HttpException, HttpStatus, UseFilters } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, getManager, Between, Connection } from 'typeorm';
+import { Repository, Connection } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { LoginCustomerInput, LoginManagerInput, RefreshTokenInput, RegisterAccountInput } from './auth.dto';
 import { HttpExceptionFilter } from '../exception/httpException.filter';

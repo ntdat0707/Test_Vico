@@ -1,13 +1,14 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import * as fs from 'fs';
-import { UpdateBlogInput, CreateBlogInput, FilterBlogInput } from './blog.dto';
-import { Repository, IsNull, Connection, Brackets, Not, Like } from 'typeorm';
+import { UpdateBlogInput, CreateBlogInput, FilterBlogInput, CreateTagInput } from './blog.dto';
+import { Repository, IsNull, Connection, Brackets } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from '../entities/product.entity';
 import { Blog } from '../entities/blog.entity';
 import { CategoryBlog } from '../entities/categoryBlog.entity';
 import { convertTv } from '../lib/utils';
 import { Employee } from '../entities/employee.entity';
+import { BlogTag } from '../entities/blogTag.entity';
 @Injectable()
 export class BlogService {
   constructor(
@@ -19,6 +20,8 @@ export class BlogService {
     private employeeRepository: Repository<Employee>,
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
+    @InjectRepository(BlogTag)
+    private blogTagRepository: Repository<BlogTag>,
     private connection: Connection,
   ) {}
 
@@ -282,7 +285,8 @@ export class BlogService {
     if (createBlogInput.tags?.length > 0) {
       newBlog.tags = createBlogInput.tags.join('|');
     }
-    newBlog.createdBy = userId;
+    // newBlog.createdBy = userId;
+    newBlog.createdBy = userId ? userId : 'fd309657-4aee-4fb5-886b-7d2acfcc5811';
     if (!createBlogInput.authorId) {
       newBlog.authorId = userId;
     } else {
@@ -302,6 +306,7 @@ export class BlogService {
           HttpStatus.NOT_FOUND,
         );
       }
+      newBlog.authorId = createBlogInput.authorId;
     }
     await this.connection.queryResultCache.clear();
     newBlog = await this.blogRepository.save(newBlog);
@@ -576,6 +581,7 @@ export class BlogService {
       .where('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
       .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
       .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id')
+      .orderBy('"blog"."position"', 'ASC')
       .orderBy('"blog"."createdAt"', 'DESC')
       .limit(limit)
       .offset((page - 1) * limit);
@@ -646,6 +652,52 @@ export class BlogService {
       limit: Number(limit),
       totalRecords: countBlog,
       data: blogs,
+    };
+  }
+
+  async getAllManager() {
+    const employees = await this.employeeRepository.find({
+      select: ['id', 'fullName'],
+    });
+    return {
+      data: employees,
+    };
+  }
+
+  async createTag(createTagInput: CreateTagInput) {
+    if (!createTagInput.tag) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'TAG_NOT_EXIST',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const existBlogTag = await this.blogTagRepository.findOne({
+      where: {
+        tag: createTagInput.tag,
+      },
+    });
+    if (existBlogTag) {
+      return {
+        data: existBlogTag,
+      };
+    }
+
+    let newBlogTag = new BlogTag();
+    newBlogTag.setAttributes(createTagInput);
+    newBlogTag = await this.blogTagRepository.save(newBlogTag);
+    return {
+      data: newBlogTag,
+    };
+  }
+
+  async getAllTag() {
+    const blogTags = await this.blogTagRepository.find();
+    return {
+      data: blogTags,
     };
   }
 }

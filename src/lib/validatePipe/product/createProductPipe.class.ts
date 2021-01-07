@@ -27,7 +27,7 @@ export class CreateProductPipe implements PipeTransform<any> {
       );
     }
 
-    if (!value.numberToppingAllow) {
+    if (!value.numberToppingAllow && value.numberToppingAllow !== 0) {
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,
@@ -36,7 +36,7 @@ export class CreateProductPipe implements PipeTransform<any> {
         HttpStatus.BAD_REQUEST,
       );
     } else {
-      if (!Number.isInteger(value.numberToppingAllow) || value.numberToppingAllow <= 0) {
+      if (!Number.isInteger(value.numberToppingAllow) || value.numberToppingAllow < 0) {
         throw new HttpException(
           {
             statusCode: HttpStatus.BAD_REQUEST,
@@ -47,7 +47,7 @@ export class CreateProductPipe implements PipeTransform<any> {
       }
     }
 
-    if (!value.price) {
+    if (!value.price && value.price !== 0) {
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,
@@ -56,7 +56,7 @@ export class CreateProductPipe implements PipeTransform<any> {
         HttpStatus.BAD_REQUEST,
       );
     } else {
-      if (!Number.isInteger(value.price) || value.price <= 0) {
+      if (!Number.isInteger(value.price) || value.price < 0) {
         throw new HttpException(
           {
             statusCode: HttpStatus.BAD_REQUEST,
@@ -119,6 +119,7 @@ export class CreateProductPipe implements PipeTransform<any> {
           HttpStatus.BAD_REQUEST,
         );
       }
+      let countAvatar = 0;
       for (const productPicture of value.productPictures) {
         if (!productPicture.picture) {
           throw new HttpException(
@@ -129,6 +130,18 @@ export class CreateProductPipe implements PipeTransform<any> {
             HttpStatus.BAD_REQUEST,
           );
         }
+        if (productPicture.isAvatar) {
+          countAvatar++;
+        }
+      }
+      if (countAvatar !== 1) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: 'ONLY_ONE_AVATAR',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
       }
     }
 

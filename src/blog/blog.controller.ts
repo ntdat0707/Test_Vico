@@ -16,7 +16,7 @@ import { ApiTags, ApiBearerAuth, ApiQuery, ApiBody, ApiConsumes } from '@nestjs/
 import { BlogService } from './blog.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../role/roles.guard';
-import { BlogPictureInput, UpdateBlogInput, CreateBlogInput, FilterBlogInput } from './blog.dto';
+import { BlogPictureInput, UpdateBlogInput, CreateBlogInput, FilterBlogInput, CreateTagInput } from './blog.dto';
 import { CheckUnSignIntPipe } from '../lib/validatePipe/checkIntegerPipe.class';
 import { CheckUUID } from '../lib/validatePipe/uuidPipe.class';
 import { HttpExceptionFilter } from '../exception/httpException.filter';
@@ -73,8 +73,6 @@ export class BlogController {
   }
 
   @Post('/upload-image-blog')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @UseInterceptors(FileInterceptor('blogPicture'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -139,5 +137,29 @@ export class BlogController {
     @Query('limit', new CheckUnSignIntPipe()) limit: number,
   ) {
     return await this.blogService.blogFilter(searchValue, parentId, categoryBlogs, page, limit);
+  }
+
+  @Get('admin/get-all-manager')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([FILTER_BLOG])
+  async getAllManager() {
+    return await this.blogService.getAllManager();
+  }
+
+  @Post('admin/tag/create')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([FILTER_BLOG])
+  async createTag(@Body() createTagInput: CreateTagInput) {
+    return await this.blogService.createTag(createTagInput);
+  }
+
+  @Get('admin/tag/get-all')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([FILTER_BLOG])
+  async getAllTag() {
+    return await this.blogService.getAllTag();
   }
 }

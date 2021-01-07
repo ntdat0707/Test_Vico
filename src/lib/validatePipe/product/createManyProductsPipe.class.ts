@@ -42,7 +42,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
       );
     }
 
-    if (!value.numberToppingAllow) {
+    if (!value.numberToppingAllow && value.numberToppingAllow !== 0) {
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,
@@ -51,7 +51,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
         HttpStatus.BAD_REQUEST,
       );
     } else {
-      if (!Number.isInteger(value.numberToppingAllow) || value.numberToppingAllow <= 0) {
+      if (!Number.isInteger(value.numberToppingAllow) || value.numberToppingAllow < 0) {
         throw new HttpException(
           {
             statusCode: HttpStatus.BAD_REQUEST,
@@ -132,6 +132,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
     }
 
     if (value.productPictures) {
+      let countAvatar = 0;
       for (const productPicture of value.productPictures) {
         if (!productPicture.picture) {
           throw new HttpException(
@@ -142,11 +143,23 @@ export class CreateManyProductPipe implements PipeTransform<any> {
             HttpStatus.BAD_REQUEST,
           );
         }
+        if (productPicture.isAvatar) {
+          countAvatar++;
+        }
+      }
+      if (countAvatar !== 1) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: 'ONLY_ONE_AVATAR',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
       }
     }
 
     for (const productVariant of value.productVariants) {
-      if (!productVariant.price) {
+      if (!productVariant.price && productVariant.price !== 0) {
         throw new HttpException(
           {
             statusCode: HttpStatus.BAD_REQUEST,
@@ -155,7 +168,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
           HttpStatus.BAD_REQUEST,
         );
       } else {
-        if (!Number.isInteger(productVariant.price) || productVariant.price <= 0) {
+        if (!Number.isInteger(productVariant.price) || productVariant.price < 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,
@@ -167,7 +180,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
       }
 
       if (productVariant.inStock) {
-        if (!Number.isInteger(productVariant.inStock) || productVariant.inStock <= 0) {
+        if (!Number.isInteger(productVariant.inStock) || productVariant.inStock < 0) {
           throw new HttpException(
             {
               statusCode: HttpStatus.BAD_REQUEST,

@@ -57,6 +57,9 @@ export class Blog {
   @Column('jsonb')
   slugs: string[];
 
+  @Column('integer', { nullable: true })
+  position: number;
+
   @Column('varchar', { default: EBlogStatus.PUBLISH })
   status: string;
 
@@ -108,7 +111,7 @@ export class Blog {
     if (object.authorId) this.authorId = object.authorId;
     if (object.categoryBlogId) this.categoryBlogId = object.categoryBlogId;
     if (object.createdBy) this.createdBy = object.createdBy;
-    if (object.status === true || object.status === false) this.status = object.status;
+    if (object.status) this.status = object.status;
     if (object.metaDescription !== undefined) this.metaDescription = object.metaDescription;
     if (object.timePublication || object.timePublication === null) this.timePublication = object.timePublication;
     if (object.shortDescription) this.shortDescription = object.shortDescription;

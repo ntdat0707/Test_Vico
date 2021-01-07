@@ -97,3 +97,8 @@ export class FilterBlogInput {
   @ApiProperty()
   readonly limit: number;
 }
+
+export class CreateTagInput {
+  @ApiProperty()
+  readonly tag: string;
+}

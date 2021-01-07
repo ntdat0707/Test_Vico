@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Customer } from '../entities/customer.entity';
 import { Brackets, Connection, getManager, IsNull, Repository } from 'typeorm';
 import { convertTv } from '../lib/utils';
-import { UpdateCustomerInput } from './customer.dto';
+import { AddProductInCartInput, UpdateCustomerInput } from './customer.dto';
 import { Shipping } from '../entities/shipping.entity';
 
 @Injectable()
@@ -193,4 +193,6 @@ export class CustomerService {
     }
     return true;
   }
+
+  async addProductInCart(addProductInCartInput: AddProductInCartInput) {}
 }

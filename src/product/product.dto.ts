@@ -14,6 +14,9 @@ export class ProductPictures {
 
   @ApiProperty()
   readonly position: number;
+
+  @ApiProperty()
+  readonly isAvatar: boolean;
 }
 
 export class ProductVariant {

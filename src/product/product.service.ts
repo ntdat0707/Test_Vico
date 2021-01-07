@@ -306,7 +306,7 @@ export class ProductService {
           newImageProduct.productId = newProduct.id;
           newImageProduct.setAttributes(productPictures);
           newImageProduct.position = productPictures.position ? productPictures.position : i + 1;
-          newImageProduct.isAvatar = i === 0 ? true : false;
+          newImageProduct.isAvatar = productPictures.isAvatar;
           arrImageProduct.push(newImageProduct);
         }
       }
@@ -314,6 +314,7 @@ export class ProductService {
 
       let newProductVariant = new ProductVariant();
       newProductVariant.setAttributes(createProductInput);
+      newProductVariant.position = 1;
       newProductVariant.productId = newProduct.id;
       newProductVariant = await transactionalEntityManager.save<ProductVariant>(newProductVariant);
     });
@@ -463,16 +464,17 @@ export class ProductService {
           newImageProduct.productId = newProduct.id;
           newImageProduct.setAttributes(productPictures);
           newImageProduct.position = productPictures.position ? productPictures.position : i + 1;
-          newImageProduct.isAvatar = i === 0 ? true : false;
+          newImageProduct.isAvatar = productPictures.isAvatar;
           arrImageProduct.push(newImageProduct);
         }
         await transactionalEntityManager.save<ProductImage>(arrImageProduct);
       }
 
-      for (const productVariant of createManyProductInput.productVariants) {
+      for (let i = 0; i < createManyProductInput.productVariants.length; i++) {
         let newProductVariant = new ProductVariant();
-        newProductVariant.setAttributes(productVariant);
+        newProductVariant.setAttributes(createManyProductInput.productVariants[i]);
         newProductVariant.productId = newProduct.id;
+        newProductVariant.position = i + 1;
         newProductVariant = await this.productVariantRepository.save<ProductVariant>(newProductVariant);
       }
     });
@@ -585,8 +587,14 @@ export class ProductService {
         HttpStatus.CONFLICT,
       );
     }
+    const productVariants = await this.productVariantRepository.find({
+      where: {
+        productId: createProductVariantInput.productId,
+      },
+    });
     let newProductVariant = new ProductVariant();
     newProductVariant.setAttributes(createProductVariantInput);
+    newProductVariant.position = productVariants.length + 1;
     newProductVariant = await this.productVariantRepository.save(newProductVariant);
     await this.connection.queryResultCache.clear();
     return { data: newProductVariant };
@@ -990,6 +998,7 @@ export class ProductService {
       .andWhere('"product"."status" = true')
       .andWhere('(product."timePublication" <=:now or product."timePublication" is null)', { now: new Date() })
       .cache(`${cacheKey}${slug}`, 30000)
+      .orderBy('"product_variant".position', 'ASC')
       .getOne();
 
     if (!product) {
@@ -1080,6 +1089,7 @@ export class ProductService {
       .addSelect('products.price')
       .addSelect('products.inStock')
       .addSelect('products.sellOutOfStock')
+      .addSelect('products.position')
       .innerJoin(`(${productQuery.getQuery()})`, 'product', '"product"."product_id"=products.id')
       .leftJoinAndMapOne(
         'products.image',
@@ -1087,6 +1097,7 @@ export class ProductService {
         'product_image',
         'products.id=product_image."productId" and product_image."isAvatar"=true',
       )
+      .orderBy('products."position"', 'ASC')
       .setParameters({ searchValueJoin, status, categoryId, now })
       .cache(`${cacheKey}_limit${limit}_page${page}`, 30000)
       .getMany();
@@ -1183,6 +1194,7 @@ export class ProductService {
       )
       .setParameters({ searchValueJoin, status, categoryId })
       .cache(`${cacheKey}_limit${limit}_page${page}`, 30000)
+      .orderBy('"products"."createdAt"', 'DESC')
       .getMany();
 
     const pages = Math.ceil(Number(count) / limit);

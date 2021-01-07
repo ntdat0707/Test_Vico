@@ -84,3 +84,8 @@ export class GetProductInCartInput {
   @ApiProperty({ required: false })
   productVariantIds?: string[];
 }
+
+export class AddProductInCartInput {
+  @ApiProperty({ type: String })
+  readonly productVariantId: string;
+}

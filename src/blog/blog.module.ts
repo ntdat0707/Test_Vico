@@ -14,14 +14,15 @@ import { Role } from '../entities/role.entity';
 import { RoleService } from '../role/role.service';
 import { Permission } from '../entities/permission.entity';
 import { PermissionRole } from '../entities/permissionRole.entity';
+import { BlogTag } from '../entities/blogTag.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Blog, CategoryBlog, Employee, Product, Role, Permission, PermissionRole]),
+    TypeOrmModule.forFeature([Blog, CategoryBlog, Employee, Product, Role, Permission, PermissionRole, BlogTag]),
     MulterModule.registerAsync({
       useFactory: () => ({
         storage: diskStorage({
-          destination: (req, file, cb) => cb(null, resolve('.', process.env.POST_IMAGE_PATH)),
+          destination: (req, file, cb) => cb(null, resolve('.', process.env.BLOG_IMAGE_PATH)),
           filename: (req: any, file: any, cb: any) => {
             cb(
               null,
