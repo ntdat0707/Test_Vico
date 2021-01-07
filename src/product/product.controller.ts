@@ -112,9 +112,9 @@ export class ProductController {
   }
 
   @Post('create-many-product')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles([CREATE_MANY_PRODUCT])
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([CREATE_MANY_PRODUCT])
   async createManyProduct(@Body(new CreateManyProductPipe()) createManyProductInput: CreateManyProductInput) {
     return await this.productService.createManyProduct(createManyProductInput);
   }

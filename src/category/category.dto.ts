@@ -16,9 +16,6 @@ export class CreateCategoryInput {
   @ApiProperty({ required: false })
   readonly metaDescription?: string;
 
-  @ApiProperty({ required: false })
-  isProduct: boolean;
-
   @ApiProperty()
   readonly slug: string;
 

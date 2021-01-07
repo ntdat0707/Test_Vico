@@ -16,8 +16,8 @@ export class ProductVariant {
   @Column('integer')
   price: number;
 
-  @Column('integer', { nullable: true })
-  volume: number;
+  @Column('varchar', { nullable: true })
+  volume: string;
 
   @Column('varchar', { nullable: true })
   flavor: string;

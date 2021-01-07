@@ -8,7 +8,6 @@ import { checkSlug } from '../../../lib/pipeUtils/slugValidate';
 export class CreateCategoryPipe implements PipeTransform<any> {
   async transform(value: CreateCategoryInput) {
     value.status = isTrueSet(value.status);
-    value.isProduct = isTrueSet(value.isProduct);
     if (!value.name) {
       throw new HttpException(
         {

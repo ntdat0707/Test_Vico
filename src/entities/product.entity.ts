@@ -58,8 +58,8 @@ export class Product {
   @Column('integer')
   price: number;
 
-  @Column('integer', { nullable: true })
-  volume: number;
+  @Column('varchar', { nullable: true })
+  volume: string;
 
   @Column('varchar', { nullable: true })
   flavor: string;
@@ -102,7 +102,7 @@ export class Product {
     if (object.toppingAvailable === true || object.toppingAvailable === false)
       this.toppingAvailable = object.toppingAvailable;
     if (object.price || object.price === 0) this.price = parseInt(object.price);
-    if (object.volume || object.volume === 0) this.volume = parseInt(object.volume);
+    if (object.volume !== undefined) this.volume = object.volume;
     if (object.flavor !== undefined) this.flavor = object.flavor;
     if (object.inStock || object.inStock === 0) this.inStock = parseInt(object.inStock);
   }

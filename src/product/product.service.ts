@@ -248,7 +248,6 @@ export class ProductService {
     const existCategory = await this.categoryRepository.count({
       where: {
         id: In(createProductInput.categoryIds),
-        isProduct: true,
         status: true,
       },
     });
@@ -388,7 +387,6 @@ export class ProductService {
     const existCategory = await this.categoryRepository.count({
       where: {
         id: In(createManyProductInput.categoryIds),
-        isProduct: true,
         status: true,
       },
     });
@@ -686,7 +684,6 @@ export class ProductService {
       const countCategories = await this.categoryRepository.count({
         where: {
           id: In(updateProductInput.categoryIds),
-          isProduct: true,
           status: true,
         },
       });
@@ -722,7 +719,6 @@ export class ProductService {
             where: {
               id: productCategory,
               status: true,
-              isProduct: true,
             },
           });
           if (!existCategory) {
@@ -1235,7 +1231,7 @@ export class ProductService {
         newProduct.numberToppingAllow = product.numberToppingAllow ? product.numberToppingAllow : 0;
         newProduct.sellOutOfStock = this.parseBoolean(product.sellOutOfStock);
         newProduct.toppingAvailable = this.parseBoolean(product.toppingAvailable);
-        newProduct.volume = product.volume ? parseInt(product.volume) : null;
+        newProduct.volume = product.volume ? product.volume : null;
         newProduct.flavor = product.flavor ? product.flavor : null;
         newProduct.inStock = product.inStock;
         newProduct.price = parseInt(product.price);
@@ -1295,7 +1291,7 @@ export class ProductService {
       newProductVariant.price = productVariant.price;
       newProductVariant.position = i;
       if (productVariant.volume) {
-        newProductVariant.volume = parseInt(productVariant.volume.replace('ml', ''));
+        newProductVariant.volume = productVariant.volume;
       }
       newProductVariant.inStock = productVariant.inStock;
       newProductVariant.flavor = productVariant.flavor;

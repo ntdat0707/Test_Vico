@@ -191,18 +191,6 @@ export class CreateManyProductPipe implements PipeTransform<any> {
         }
       }
 
-      if (productVariant.volume) {
-        if (!Number.isInteger(productVariant.volume) || productVariant.volume <= 0) {
-          throw new HttpException(
-            {
-              statusCode: HttpStatus.BAD_REQUEST,
-              message: 'VOLUME_INVALID',
-            },
-            HttpStatus.BAD_REQUEST,
-          );
-        }
-      }
-
       if (!productVariant.itemCode) {
         throw new HttpException(
           {
