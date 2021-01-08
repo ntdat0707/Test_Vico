@@ -26,9 +26,9 @@ export class CategoryBlogService {
   async getCategoryBlog(id: string) {
     this.logger.debug(`Running api getCategoryBlog at ${new Date()}`);
     const category = await this.categoryBlogRepository
-      .createQueryBuilder('category')
-      .where('category."deletedAt" is null')
-      .andWhere('category.id=:id', { id })
+      .createQueryBuilder('category_blog')
+      .where('category_blog."deletedAt" is null')
+      .andWhere('category_blog.id=:id', { id })
       .cache(`category_blog_${id}`)
       .getOne();
     if (!category) {
@@ -50,15 +50,16 @@ export class CategoryBlogService {
   ) {
     this.logger.debug(`Running api getCategoriesByParentId at ${new Date()}`);
     const countCategory: number = await this.categoryBlogRepository
-      .createQueryBuilder('category')
-      .where('category."deletedAt" is null')
-      .andWhere('category."parentId"=:categoryBlogId', { categoryBlogId })
+      .createQueryBuilder('category_blog')
+      .where('category_blog."deletedAt" is null')
+      .andWhere('category_blog."parentId"=:categoryBlogId', { categoryBlogId })
       .cache(`categories_blog_count${categoryBlogId}`)
       .getCount();
     const existCategories: CategoryBlog[] = await this.categoryBlogRepository
-      .createQueryBuilder('category')
-      .where('category."deletedAt" is null')
-      .andWhere('category."parentId"=:categoryBlogId', { categoryBlogId })
+      .createQueryBuilder('category_blog')
+      .where('category_blog."deletedAt" is null')
+      .andWhere('category_blog."parentId"=:categoryBlogId', { categoryBlogId })
+      .orderBy('category_blog.position', 'ASC')
       .limit(limit)
       .offset((page - 1) * limit)
       .cache(`categories_blog_parentId${categoryBlogId}page${page}_limit${limit}`)
@@ -77,8 +78,9 @@ export class CategoryBlogService {
   async getCategories(page = 1, limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE)) {
     this.logger.debug(`Running api getCategories at ${new Date()}`);
     const categoriesQuery = this.categoryBlogRepository
-      .createQueryBuilder('category')
-      .where('category."deletedAt" is null');
+      .createQueryBuilder('category_blog')
+      .orderBy('category_blog.position', 'ASC')
+      .where('category_blog."deletedAt" is null');
     const categoriesCount = await categoriesQuery.cache(`categories_blog_count_page${page}_limit${limit}`).getCount();
     const categories = await categoriesQuery
       .limit(limit)
@@ -101,6 +103,7 @@ export class CategoryBlogService {
       where: {
         parentId: IsNull(),
       },
+      order: { position: 'ASC' },
     });
     return {
       data: categoryBlogParents,

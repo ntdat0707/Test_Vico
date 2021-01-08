@@ -11,7 +11,7 @@ import { UploadFileInput } from './description.dto';
 export class DescriptionController {
   constructor(private descriptionService: DescriptionService) {}
 
-  @Post()
+  @Post('upload-image')
   // @ApiBearerAuth()
   // @UseGuards(JwtAuthGuard, RolesGuard)
   // @Roles([CREATE_PRODUCT, UPDATE_PRODUCT, CREATE_MANY_PRODUCT, CREATE_PRODUCT_VARIANT])

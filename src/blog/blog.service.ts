@@ -115,6 +115,7 @@ export class BlogService {
       .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id')
       .where('slugs::text like :slug', { slug: `%"${slug}"%` })
       .andWhere('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
+      .andWhere(`blog."status" = 'publish'`)
       .cache(`blog_${slug}`)
       .getOne();
     if (!existBlog) {
@@ -579,6 +580,7 @@ export class BlogService {
     const blogQuery = this.blogRepository
       .createQueryBuilder('blog')
       .where('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
+      .andWhere(`blog."status" = 'publish'`)
       .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
       .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id')
       .orderBy('"blog"."position"', 'ASC')
@@ -588,6 +590,7 @@ export class BlogService {
     const countQuery = this.blogRepository
       .createQueryBuilder('blog')
       .where('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
+      .andWhere(`blog."status" = 'publish'`)
       .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
       .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id');
 

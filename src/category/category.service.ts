@@ -344,7 +344,7 @@ export class CategoryService {
     this.logger.debug(`Running api getAllCategoriesByAdmin at ${new Date()}`);
     const categories = await this.categoryRepository
       .createQueryBuilder('category')
-      .orderBy('category.sales', 'DESC')
+      .orderBy('category.position', 'ASC')
       .cache(`get_all_categories_by_admin`)
       .getMany();
     return {

@@ -26,6 +26,9 @@ export class CategoryBlog {
   @Column('boolean', { default: true })
   status: boolean;
 
+  @Column('integer', { nullable: true })
+  position: number;
+
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', select: false })
   createdAt: Date;
 
