@@ -56,7 +56,7 @@ export class CategoryService {
     const categories = await categoryQuery
       .limit(limit)
       .offset((page - 1) * limit)
-      .orderBy('category.sales', 'DESC')
+      .orderBy('category.position', 'ASC')
       .where('category."timePublication" <=:now or category."timePublication" is null', { now: now })
       .cache(`category_page${page}_limit${limit}`)
       .getMany();
@@ -75,7 +75,7 @@ export class CategoryService {
     const now = new Date();
     const categories = await this.categoryRepository
       .createQueryBuilder('category')
-      .orderBy('category.sales', 'DESC')
+      .orderBy('category.position', 'ASC')
       .where('category."timePublication" <=:now or category."timePublication" is null', { now: now })
       .cache(`get_all_categories`)
       .getMany();
