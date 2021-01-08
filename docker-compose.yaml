@@ -46,7 +46,8 @@ services:
       USER_IMAGE_PATH: uploads/users
       TOPPING_IMAGE_PATH: uploads/toppings
       CATEGORY_BLOG_IMAGE_PATH: uploads/categoryPosts
-      BLOG_IMAGE_PATH: uploads/posts
+      BLOG_IMAGE_PATH: uploads/blogs
+      DESCRIPTION_IMAGE_PATH: uploads/descriptions
       MAX_NUMBER_FILE_UPLOAD: 10
       MAX_SIZE_PER_FILE_UPLOAD: 102400
       MINIMUM_ITEMS_PER_PAGE: 5

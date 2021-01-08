@@ -20,7 +20,7 @@ import { ProductTopping } from '../entities/productTopping.entity';
     MulterModule.registerAsync({
       useFactory: () => ({
         storage: diskStorage({
-          destination: (req, file, cb) => cb(null, resolve('.', process.env.CATEGORY_IMAGE_PATH)),
+          destination: (req, file, cb) => cb(null, resolve('.', process.env.TOPPING_IMAGE_PATH)),
           filename: (req: any, file: any, cb: any) => {
             cb(
               null,

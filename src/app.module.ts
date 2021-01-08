@@ -14,6 +14,7 @@ import { ShippingModule } from './shipping/shipping.module';
 import { CategoryBlogModule } from './category-blog/category-blog.module';
 import { BlogModule } from './blog/blog.module';
 import { CustomerModule } from './customer/customer.module';
+import { DescriptionModule } from './description/description.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { CustomerModule } from './customer/customer.module';
     ShippingModule,
     BlogModule,
     CustomerModule,
+    DescriptionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
