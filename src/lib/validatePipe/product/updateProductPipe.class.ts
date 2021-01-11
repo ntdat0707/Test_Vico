@@ -7,7 +7,7 @@ import { checkSlug } from '../../../lib/pipeUtils/slugValidate';
 @Injectable()
 export class UpdateProductPipe implements PipeTransform<any> {
   async transform(value: UpdateProductInput) {
-    if (value.categoryIds?.length > 0) {
+    if (Array.isArray(value.categoryIds) && value.categoryIds?.length > 0) {
       for (const categoryId of value.categoryIds) {
         if (!checkUUID(categoryId)) {
           throw new HttpException(
@@ -20,7 +20,7 @@ export class UpdateProductPipe implements PipeTransform<any> {
         }
       }
     }
-    if (value.toppingIds?.length > 0) {
+    if (Array.isArray(value.toppingIds) && value.toppingIds?.length > 0) {
       for (const toppingId of value.toppingIds) {
         if (!checkUUID(toppingId)) {
           throw new HttpException(

@@ -1,16 +1,21 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Customer } from '../entities/customer.entity';
-import { Brackets, Connection, getManager, IsNull, Repository } from 'typeorm';
+import { Brackets, Connection, getManager, In, IsNull, Repository } from 'typeorm';
 import { convertTv } from '../lib/utils';
 import { AddProductInCartInput, UpdateCustomerInput } from './customer.dto';
 import { Shipping } from '../entities/shipping.entity';
+import { ProductVariant } from '../product/product.dto';
+import { Product } from '../entities/product.entity';
+import { Cart } from '../entities/cart.entity';
 
 @Injectable()
 export class CustomerService {
   constructor(
     @InjectRepository(Customer) private customerRepository: Repository<Customer>,
     @InjectRepository(Shipping) private shippingRepository: Repository<Shipping>,
+    @InjectRepository(Cart) private cartRepository: Repository<Cart>,
+    @InjectRepository(ProductVariant) private productVariantRepository: Repository<ProductVariant>,
     private connection: Connection,
   ) {}
   async updateCustomerAvatar(customerId: string, avatar: any) {
@@ -194,5 +199,30 @@ export class CustomerService {
     return true;
   }
 
-  async addProductInCart(addProductInCartInput: AddProductInCartInput) {}
+  async addProductInCart(customerId: string, addProductInCartInput: AddProductInCartInput) {
+    const existProductVariant = await this.productVariantRepository
+      .createQueryBuilder('product_variant')
+      .leftJoinAndMapOne('product_variant.product', Product, 'product', '"product_variant"."productId"=product.id')
+      .where('product_variant.id=:id', { id: addProductInCartInput.productVariantId })
+      .andWhere('("product"."timePublication" <=:now or "product"."timePublication" is null)', { now: new Date() })
+      .getOne();
+
+    if (!existProductVariant) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'PRODUCT_VARIANT_NOT_EXIST',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const newCart = new Cart();
+    newCart.customerId = customerId;
+    newCart.productVariantId = addProductInCartInput.productVariantId;
+    await this.cartRepository.save(newCart);
+    return {
+      data: true,
+    };
+  }
 }

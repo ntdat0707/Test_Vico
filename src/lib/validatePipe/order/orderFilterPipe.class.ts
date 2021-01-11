@@ -6,7 +6,7 @@ import { OrderFilterInput } from '../../../order/order.dto';
 @Injectable()
 export class OrderFilterPipe implements PipeTransform<any> {
   async transform(value: OrderFilterInput) {
-    if (value.arrStatus?.length > 0) {
+    if (Array.isArray(value.arrStatus) && value.arrStatus?.length > 0) {
       for (const status of value.arrStatus) {
         if (!Number.isInteger(status)) {
           throw new HttpException(

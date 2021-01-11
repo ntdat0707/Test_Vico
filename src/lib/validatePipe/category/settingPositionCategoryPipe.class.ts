@@ -5,7 +5,7 @@ import { SettingPositionCategoryInput } from '../../../category/category.dto';
 @Injectable()
 export class SettingPositionCategoryPipe implements PipeTransform<any> {
   async transform(value: SettingPositionCategoryInput) {
-    if (!value.categoryPositions || value.categoryPositions.length === 0) {
+    if (!value.categoryPositions || value.categoryPositions.length === 0 || !Array.isArray(value.categoryPositions)) {
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,

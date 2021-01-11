@@ -88,7 +88,7 @@ export class Blog {
   metaDescription: string;
 
   @Column('timestamptz', { nullable: true })
-  timePublication: string;
+  timePublication: Date;
 
   @Column('varchar', { nullable: true })
   shortDescription: string;

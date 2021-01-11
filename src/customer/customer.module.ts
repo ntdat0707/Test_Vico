@@ -8,9 +8,13 @@ import { RoleService } from '../role/role.service';
 import { Role } from '../entities/role.entity';
 import { Permission } from '../entities/permission.entity';
 import { PermissionRole } from '../entities/permissionRole.entity';
-
+import { Product } from '../entities/product.entity';
+import { ProductVariant } from '../entities/productVariant.entity';
+import { Cart } from '../entities/cart.entity';
 @Module({
-  imports: [TypeOrmModule.forFeature([Customer, Shipping, Role, Permission, PermissionRole])],
+  imports: [
+    TypeOrmModule.forFeature([Customer, Shipping, Role, Permission, PermissionRole, Product, ProductVariant, Cart]),
+  ],
   providers: [CustomerService, RoleService],
   controllers: [CustomerController],
 })

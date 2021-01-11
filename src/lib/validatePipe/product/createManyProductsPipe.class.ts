@@ -107,7 +107,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
       }
     }
 
-    if (value.toppingIds?.length > 0) {
+    if (Array.isArray(value.toppingIds) && value.toppingIds?.length > 0) {
       for (const toppingId of value.toppingIds) {
         if (!checkUUID(toppingId)) {
           throw new HttpException(
@@ -121,7 +121,7 @@ export class CreateManyProductPipe implements PipeTransform<any> {
       }
     }
 
-    if (!value.productVariants || value.productVariants.length === 0) {
+    if (!value.productVariants || value.productVariants.length === 0 || !Array.isArray(value.productVariants)) {
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,

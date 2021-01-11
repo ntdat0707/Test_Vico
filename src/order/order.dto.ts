@@ -56,6 +56,9 @@ export class CreateOrderInput {
   @ApiProperty()
   readonly note?: string;
 
+  @ApiProperty({ required: false, type: Date })
+  readonly shippingTime?: Date;
+
   @ApiProperty({ type: [OrderDetail] })
   readonly orderDetails: OrderDetail[];
 }

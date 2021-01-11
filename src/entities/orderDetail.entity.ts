@@ -5,7 +5,7 @@ export class OrderDetail {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('uuid', { nullable: true })
+  @Column('uuid')
   productVariantId: string;
 
   @Column('integer')

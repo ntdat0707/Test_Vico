@@ -21,6 +21,9 @@ export class CreateShippingInput {
 
   @ApiProperty()
   readonly place: string;
+
+  @ApiProperty()
+  readonly isDefault: boolean;
 }
 
 export class UpdateShippingInput {
@@ -44,4 +47,7 @@ export class UpdateShippingInput {
 
   @ApiProperty()
   readonly place: string;
+
+  @ApiProperty()
+  readonly isDefault: boolean;
 }

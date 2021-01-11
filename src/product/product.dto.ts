@@ -68,7 +68,7 @@ export class CreateProductInput {
   readonly description?: string;
 
   @ApiProperty({ required: false, type: Date })
-  readonly timePublication?: string;
+  readonly timePublication?: Date;
 
   @ApiProperty({ required: false, type: [String] })
   readonly tags?: string[];

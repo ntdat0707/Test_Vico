@@ -20,7 +20,7 @@ export class Product {
   status: boolean;
 
   @Column('timestamptz', { nullable: true })
-  timePublication: string;
+  timePublication: Date;
 
   @Column('varchar', { nullable: true })
   tags: string;

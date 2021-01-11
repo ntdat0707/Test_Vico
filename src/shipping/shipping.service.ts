@@ -4,7 +4,9 @@ import { Customer } from '../entities/customer.entity';
 import { Shipping } from '../entities/shipping.entity';
 import { Connection, getManager, Repository } from 'typeorm';
 import { CreateShippingInput, UpdateShippingInput } from './shipping.dto';
-
+import { Province } from '../entities/province.entity';
+import { District } from '../entities/district.entity';
+import { Ward } from '../entities/ward.entity';
 @Injectable()
 export class ShippingService {
   private readonly logger = new Logger(ShippingService.name);
@@ -13,6 +15,12 @@ export class ShippingService {
     private shippingRepository: Repository<Shipping>,
     @InjectRepository(Customer)
     private customerRepository: Repository<Customer>,
+    @InjectRepository(Province)
+    private provinceRepository: Repository<Province>,
+    @InjectRepository(District)
+    private districtRepository: Repository<District>,
+    @InjectRepository(Ward)
+    private wardRepository: Repository<Ward>,
     private connection: Connection,
   ) {}
 
@@ -60,7 +68,7 @@ export class ShippingService {
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,
-          message: 'CANNOT_CREATE_SHIPPING',
+          message: 'CUSTOMER_LIMITED_SHIPPING_ADDRESS',
         },
         HttpStatus.BAD_REQUEST,
       );
@@ -69,7 +77,7 @@ export class ShippingService {
     newShipping.setAttributes(createShippingInput);
     newShipping.customerId = customerId;
 
-    const existShippingDefaultId = await this.customerRepository.findOne({
+    const existCustomer = await this.customerRepository.findOne({
       where: {
         id: customerId,
       },
@@ -77,9 +85,12 @@ export class ShippingService {
 
     await getManager().transaction(async transactionalEntityManager => {
       newShipping = await transactionalEntityManager.save<Shipping>(newShipping);
-      if (existShippingDefaultId.shippingDefaultId === null) {
-        existShippingDefaultId.shippingDefaultId = newShipping.id;
-        await transactionalEntityManager.save<Customer>(existShippingDefaultId);
+      if (!existCustomer.shippingDefaultId) {
+        existCustomer.shippingDefaultId = newShipping.id;
+        await transactionalEntityManager.save<Customer>(existCustomer);
+      } else if (createShippingInput.isDefault) {
+        existCustomer.shippingDefaultId = newShipping.id;
+        await transactionalEntityManager.save<Customer>(existCustomer);
       }
     });
 
@@ -106,9 +117,123 @@ export class ShippingService {
       );
     }
 
-    existShipping.setAttributes(updateShippingInput);
-    await this.shippingRepository.save(existShipping);
-    return { data: existShipping };
+    const wardId = updateShippingInput.wardId;
+    const districtId = updateShippingInput.districtId;
+    const provinceId = updateShippingInput.provinceId;
+
+    if (wardId && provinceId && districtId) {
+      if (!Number.isInteger(provinceId)) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: 'PROVINCE_ID_NOT_VALID',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      if (!Number.isInteger(districtId)) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: 'DISTRICT_ID_NOT_VALID',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      if (!Number.isInteger(wardId)) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.BAD_REQUEST,
+            message: 'WARD_ID_NOT_VALID',
+          },
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      const provinceQuery = this.provinceRepository
+        .createQueryBuilder('province')
+        .where('"deletedAt" is null')
+        .andWhere('id=:provinceId');
+      const districtQuery = this.districtRepository
+        .createQueryBuilder('district')
+        .where('"deletedAt" is null')
+        .andWhere('id=:districtId');
+      const wardQuery = this.wardRepository
+        .createQueryBuilder('ward')
+        .where('"deletedAt" is null')
+        .andWhere('id=:wardId');
+      const rawLocations = await this.connection
+        .createQueryBuilder()
+        .addSelect('*')
+        .addFrom(`(${provinceQuery.getQuery()})`, 'province')
+        .leftJoin(
+          `(${districtQuery.getQuery()})`,
+          'district',
+          '"district"."district_provinceId"=province."province_id"',
+        )
+        .leftJoin(`(${wardQuery.getQuery()})`, 'ward', '"ward"."ward_districtId"=district."district_id"')
+        .setParameters({
+          provinceId: updateShippingInput.provinceId,
+          districtId: updateShippingInput.districtId,
+          wardId: updateShippingInput.wardId,
+        })
+        .getRawOne();
+
+      if (!rawLocations || !rawLocations.province_id) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: 'PROVINCE_NOT_EXIST',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      if (!rawLocations.district_id) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: 'DISTRICT_NOT_EXIST',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      if (!rawLocations.ward_id) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: 'WARD_NOT_EXIST',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+    }
+    let shippingAddress = null;
+    await getManager().transaction(async transactionalEntityManager => {
+      if (updateShippingInput.isDefault) {
+        const customer = await this.customerRepository.findOne({
+          where: {
+            id: customerId,
+          },
+        });
+
+        if (customer.shippingDefaultId !== id) {
+          customer.shippingDefaultId = id;
+          await transactionalEntityManager.save<Customer>(customer);
+        }
+      }
+      if (!existShipping.isHaveOrder) {
+        existShipping.setAttributes(updateShippingInput);
+        shippingAddress = await transactionalEntityManager.save<Shipping>(existShipping);
+      } else {
+        const newShipping = new Shipping();
+        newShipping.setAttributes(updateShippingInput);
+        existShipping.status = false;
+        shippingAddress = await transactionalEntityManager.save<Shipping>(newShipping);
+        await transactionalEntityManager.save<Shipping>(existShipping);
+      }
+    });
+
+    return { data: shippingAddress };
   }
 
   async setShippingDefault(customerId: string, id: string) {
@@ -154,7 +279,22 @@ export class ShippingService {
         HttpStatus.NOT_FOUND,
       );
     }
+    const customer = await this.customerRepository.findOne({
+      where: {
+        id: customerId,
+      },
+    });
+
+    if (customer.shippingDefaultId === id) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'SHIPPING_DEFAULT_CANNOT_DELETE',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     await this.shippingRepository.softRemove(existShipping);
-    return { data: 'success' };
+    return { data: true };
   }
 }

@@ -36,7 +36,7 @@ export class Category {
   metaDescription: string;
 
   @Column('timestamptz', { nullable: true })
-  timePublication: string;
+  timePublication: Date;
 
   @Column('boolean', { default: false })
   status: boolean;

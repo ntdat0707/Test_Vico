@@ -42,7 +42,7 @@ export class Customer {
   gender: number;
 
   @Column('date', { nullable: true })
-  birthDay: string;
+  birthDay: Date;
 
   @Column('varchar', { nullable: true })
   avatar: string;

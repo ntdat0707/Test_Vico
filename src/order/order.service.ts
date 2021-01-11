@@ -241,7 +241,6 @@ export class OrderService {
       );
     }
 
-    let existProductVariant: ProductVariant;
     const arrUpdateStockProductVariant = [];
     const arrUpdateStockTopping = [];
     let totalQuantity = 0;

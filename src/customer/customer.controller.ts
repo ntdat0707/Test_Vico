@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Post,
   Put,
   Query,
   UploadedFile,
@@ -18,12 +19,13 @@ import { CheckUUID } from '../lib/validatePipe/uuidPipe.class';
 import { GetUser } from '../auth/get-user.decorator';
 import { HttpExceptionFilter } from '../exception/httpException.filter';
 import { CheckUnSignIntPipe } from '../lib/validatePipe/checkIntegerPipe.class';
-import { UpdateCustomerAvatarInput, UpdateCustomerInput } from './customer.dto';
+import { AddProductInCartInput, UpdateCustomerAvatarInput, UpdateCustomerInput } from './customer.dto';
 import { CustomerService } from './customer.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DELETE_CUSTOMER, FILTER_CUSTOMER } from '../role/codePermission';
 import { Roles } from '../role/role.decorators';
 import { RolesGuard } from '../role/roles.guard';
+import { AddProductInCartPipe } from '../lib/validatePipe/customer/addProductInCard.class';
 @Controller('customer')
 @ApiTags('Customer')
 @UseFilters(new HttpExceptionFilter())
@@ -79,5 +81,16 @@ export class CustomerController {
   @Roles([DELETE_CUSTOMER])
   async deleteCustomer(@Param('id', new CheckUUID()) id: string) {
     return await this.customerService.deleteCustomer(id);
+  }
+
+  @Post('add-product-in-cart')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([FILTER_ORDER])
+  async addProductInCart(
+    @GetUser('userId') customerId: string,
+    @Body(new AddProductInCartPipe()) addProductInCartInput: AddProductInCartInput,
+  ) {
+    return await this.customerService.addProductInCart(customerId, addProductInCartInput);
   }
 }

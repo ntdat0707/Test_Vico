@@ -5,7 +5,7 @@ import { FilterBlogInput } from '../../../blog/blog.dto';
 @Injectable()
 export class FilterBlogPipe implements PipeTransform<any> {
   async transform(value: FilterBlogInput) {
-    if (value.categoryBlogs?.length > 0) {
+    if (Array.isArray(value.categoryBlogs) && value.categoryBlogs?.length > 0) {
       for (const categoryBlogId of value.categoryBlogs) {
         if (!checkUUID(categoryBlogId)) {
           throw new HttpException(

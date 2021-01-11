@@ -38,6 +38,9 @@ export class Order {
   @Column('varchar')
   paymentType: string;
 
+  @Column('timestamptz', { nullable: true })
+  shippingTime: Date;
+
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', select: true })
   createdAt: Date;
 
@@ -59,5 +62,6 @@ export class Order {
     if (object.note !== undefined) this.note = object.note;
     if (object.totalDiscount || object.totalDiscount === 0) this.totalDiscount = parseInt(object.totalDiscount);
     if (object.paymentType) this.paymentType = object.paymentType;
+    if (object.shippingTime || object.shippingTime === null) this.shippingTime = object.shippingTime;
   }
 }
