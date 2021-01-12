@@ -1,12 +1,15 @@
-import { Controller, Post, Body, UseFilters, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Body, UseFilters, UseInterceptors, UploadedFile, Get, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterAccountInput, LoginCustomerInput, RefreshTokenInput, LoginManagerInput } from './auth.dto';
-import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { HttpExceptionFilter } from '../exception/httpException.filter';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RegisterPipe } from '../lib/validatePipe/customer/registerPipe.class';
 import { LoginPipe } from '../lib/validatePipe/customer/loginPipe.class';
 import { LoginManagerPipe } from '../lib/validatePipe/customer/loginManagerPipe.class';
+import { GetUser } from './get-user.decorator';
+import { RolesGuard } from '../role/roles.guard';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -42,5 +45,19 @@ export class AuthController {
   @Post('/admin/refresh-token')
   async refreshTokenManager(@Body() refreshTokenInput: RefreshTokenInput) {
     return await this.authService.refreshTokenManager(refreshTokenInput);
+  }
+
+  @Get('/me')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  getProfile(@GetUser('userId') customerId: string) {
+    return this.authService.getProfile(customerId);
+  }
+
+  @Get('admin/me')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  getProfileAdmin(@GetUser('employeeId') employeeId: string) {
+    return this.authService.getProfileAdmin(employeeId);
   }
 }

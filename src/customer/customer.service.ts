@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Customer } from '../entities/customer.entity';
 import { Brackets, Connection, getManager, In, IsNull, Repository } from 'typeorm';
 import { convertTv } from '../lib/utils';
-import { AddProductInCartInput, UpdateCustomerInput } from './customer.dto';
+import { ActiveCustomerInput, AddProductInCartInput, CreateCustomerInput, UpdateCustomerInput } from './customer.dto';
 import { Shipping } from '../entities/shipping.entity';
 import { ProductVariant } from '../product/product.dto';
 import { Product } from '../entities/product.entity';
@@ -223,6 +223,111 @@ export class CustomerService {
     await this.cartRepository.save(newCart);
     return {
       data: true,
+    };
+  }
+
+  async createCustomer(createCustomerInput: CreateCustomerInput) {
+    let existCustomer: Customer;
+    if (createCustomerInput.email) {
+      existCustomer = await this.customerRepository.findOne({
+        where: {
+          email: createCustomerInput.email,
+        },
+      });
+
+      if (existCustomer) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.CONFLICT,
+            message: 'EMAIL_EXISTED',
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
+    }
+
+    if (!createCustomerInput.phoneNumber) {
+      existCustomer = await this.customerRepository.findOne({
+        where: {
+          phoneNumber: createCustomerInput.phoneNumber,
+        },
+      });
+
+      if (existCustomer) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.CONFLICT,
+            message: 'PHONE_EXISTED',
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
+    }
+
+    let newCustomer = new Customer();
+    newCustomer.setAttributes(createCustomerInput);
+    newCustomer.isActive = false;
+    newCustomer.acceptEmailMkt = true;
+    let customerCode = '';
+    while (true) {
+      const random =
+        Math.random()
+          .toString(36)
+          .substring(2, 4) +
+        Math.random()
+          .toString(36)
+          .substring(2, 8);
+      const randomCode = random.toUpperCase();
+      customerCode = randomCode;
+      const existCode = await this.customerRepository.findOne({
+        where: {
+          code: customerCode,
+        },
+      });
+      if (!existCode) {
+        break;
+      }
+    }
+    newCustomer.code = customerCode;
+    await this.connection.queryResultCache.clear();
+    newCustomer = await this.customerRepository.save(newCustomer);
+
+    return {
+      data: newCustomer,
+    };
+  }
+
+  async activeCustomer(activeCustomerInput: ActiveCustomerInput) {
+    const existCustomer = await this.customerRepository.findOne({
+      where: {
+        id: activeCustomerInput.customerId,
+      },
+    });
+
+    if (!existCustomer) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'CUSTOMER_NOT_EXIST',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (existCustomer.isActive) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'CUSTOMER_ACTIVATED',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    existCustomer.isActive = true;
+
+    return {
+      data: existCustomer,
     };
   }
 }

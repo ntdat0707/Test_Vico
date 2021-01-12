@@ -281,7 +281,7 @@ export class ProductService {
       const arrProductTopping = [];
       if (createProductInput.toppingIds?.length) {
         for (const toppingId of createProductInput.toppingIds) {
-          let newProductTopping = new ProductTopping();
+          const newProductTopping = new ProductTopping();
           newProductTopping.toppingId = toppingId;
           newProductTopping.productId = newProduct.id;
           arrProductTopping.push(newProductTopping);
@@ -291,7 +291,7 @@ export class ProductService {
 
       const arrProductCategory = [];
       for (const categoryId of createProductInput.categoryIds) {
-        let newProductCategory = new ProductCategory();
+        const newProductCategory = new ProductCategory();
         newProductCategory.categoryId = categoryId;
         newProductCategory.productId = newProduct.id;
         arrProductCategory.push(newProductCategory);
@@ -439,7 +439,7 @@ export class ProductService {
       const arrProductTopping = [];
       if (createManyProductInput.toppingIds?.length) {
         for (const toppingId of createManyProductInput.toppingIds) {
-          let newProductTopping = new ProductTopping();
+          const newProductTopping = new ProductTopping();
           newProductTopping.toppingId = toppingId;
           newProductTopping.productId = newProduct.id;
           arrProductTopping.push(newProductTopping);
@@ -449,7 +449,7 @@ export class ProductService {
 
       const arrProductCategory = [];
       for (const categoryId of createManyProductInput.categoryIds) {
-        let newProductCategory = new ProductCategory();
+        const newProductCategory = new ProductCategory();
         newProductCategory.categoryId = categoryId;
         newProductCategory.productId = newProduct.id;
         arrProductCategory.push(newProductCategory);
@@ -955,7 +955,7 @@ export class ProductService {
   }
 
   async getProductBySlug(userId: string, slug: string) {
-    let cacheKey = 'get_product_by_slug';
+    const cacheKey = 'get_product_by_slug';
     const productQuery = this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndMapMany(
@@ -1032,7 +1032,7 @@ export class ProductService {
       .createQueryBuilder('product')
       .where('(product."timePublication" <=:now or product."timePublication" is null)', { now: now });
 
-    let newSearchValue = [];
+    const newSearchValue = [];
     let searchValueJoin = '';
 
     if (searchValue?.length > 0) {
@@ -1123,7 +1123,7 @@ export class ProductService {
 
     const countQuery: any = this.productRepository.createQueryBuilder('product');
 
-    let newSearchValue = [];
+    const newSearchValue = [];
     let searchValueJoin = '';
 
     if (searchValue?.length > 0) {

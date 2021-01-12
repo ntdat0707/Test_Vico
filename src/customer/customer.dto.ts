@@ -89,3 +89,28 @@ export class AddProductInCartInput {
   @ApiProperty()
   readonly productVariantId: string;
 }
+
+export class CreateCustomerInput {
+  @ApiProperty({ required: false })
+  readonly email: string;
+
+  @ApiProperty()
+  readonly fullName: string;
+
+  @ApiProperty({ required: false })
+  readonly gender?: number;
+
+  @ApiProperty({ required: false })
+  readonly phoneNumber: string;
+
+  @ApiProperty({ required: false })
+  readonly birthDay?: Date;
+
+  @ApiProperty({ required: false })
+  readonly address: string;
+}
+
+export class ActiveCustomerInput {
+  @ApiProperty()
+  readonly customerId: string;
+}

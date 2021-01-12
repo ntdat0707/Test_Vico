@@ -5,7 +5,7 @@ import { District } from '../entities/district.entity';
 import { Province } from '../entities/province.entity';
 import { Shipping } from '../entities/shipping.entity';
 import { Ward } from '../entities/ward.entity';
-import { Between, Connection, getManager, In, IsNull, Repository } from 'typeorm';
+import { Between, Connection, getManager, IsNull, Repository } from 'typeorm';
 import { Order } from '../entities/order.entity';
 import { CreateOrderInput, OrderFilterInput, UpdateOrderInput } from './order.dto';
 import { Product } from '../entities/product.entity';
@@ -245,7 +245,7 @@ export class OrderService {
     const arrUpdateStockTopping = [];
     let totalQuantity = 0;
     let totalPrice = 0;
-    let totalDiscount = 0;
+    const totalDiscount = 0;
     let isInArrUpdateTopping = false;
     let isInArrUpdateVariant = false;
     if (createOrderInput.orderDetails?.length > 0) {

@@ -78,7 +78,7 @@ export class CreateBlogInput {
   readonly imageFeatured: string;
 
   @ApiProperty({ required: false, type: Date })
-  readonly timePublication?: string;
+  readonly timePublication?: Date;
 }
 
 export class FilterBlogInput {

@@ -225,12 +225,6 @@ export class BlogService {
       );
     }
 
-    let newBlog = new Blog();
-    newBlog.setAttributes(createBlogInput);
-    if (!createBlogInput.pageTitle) {
-      newBlog.pageTitle = createBlogInput.title + '| Winemart';
-    }
-
     let existSlug: any;
     existSlug = await this.categoryBlogRepository.findOne({
       where: {
@@ -278,6 +272,13 @@ export class BlogService {
         HttpStatus.CONFLICT,
       );
     }
+
+    let newBlog = new Blog();
+    newBlog.setAttributes(createBlogInput);
+    newBlog.pageTitle = createBlogInput.pageTitle ? createBlogInput.pageTitle : createBlogInput.title + '| Winemart';
+
+    newBlog.timePublication = createBlogInput.timePublication ? createBlogInput.timePublication : new Date();
+
     newBlog.slugs = [];
     newBlog.slugs.push(createBlogInput.slug);
     if (createBlogInput.status !== 'publish' && createBlogInput.status !== 'private') {
@@ -390,6 +391,7 @@ export class BlogService {
         existBlog.slugs[index] = temp;
       }
     }
+
     if (updateBlogInput.authorId) {
       const existAuthor: Employee = await this.employeeRepository.findOne({
         where: {
@@ -408,6 +410,7 @@ export class BlogService {
         );
       }
     }
+
     if (updateBlogInput.categoryBlogId) {
       const existCategoryBlog: any = await this.categoryBlogRepository
         .createQueryBuilder('category_blog')
@@ -441,10 +444,12 @@ export class BlogService {
         );
       }
     }
+
     existBlog.setAttributes(updateBlogInput);
     if (updateBlogInput.tags?.length > 0) {
       existBlog.tags = updateBlogInput.tags.join('|');
     }
+
     await this.blogRepository.save(existBlog);
     await this.connection.queryResultCache.clear();
     return {
@@ -496,11 +501,7 @@ export class BlogService {
       .orderBy('"blog"."createdAt"', 'DESC')
       .limit(limit)
       .offset((page - 1) * limit);
-    const countQuery = this.blogRepository
-      .createQueryBuilder('blog')
-      .where('blog."deletedAt" is null')
-      .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
-      .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id');
+    const countQuery = this.blogRepository.createQueryBuilder('blog').where('blog."deletedAt" is null');
 
     if (searchValue) {
       searchValueConvert += `%${convertTv(searchValue)}%`;
@@ -584,15 +585,13 @@ export class BlogService {
       .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
       .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id')
       .orderBy('"blog"."position"', 'ASC')
-      .orderBy('"blog"."createdAt"', 'DESC')
+      .orderBy('"blog"."timePublication"', 'DESC')
       .limit(limit)
       .offset((page - 1) * limit);
     const countQuery = this.blogRepository
       .createQueryBuilder('blog')
       .where('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
-      .andWhere(`blog."status" = 'publish'`)
-      .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
-      .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id');
+      .andWhere(`blog."status" = 'publish'`);
 
     if (searchValue) {
       searchValueConvert += `%${convertTv(searchValue)}%`;

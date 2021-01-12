@@ -6,7 +6,6 @@ import * as bcrypt from 'bcryptjs';
 import { LoginCustomerInput, LoginManagerInput, RefreshTokenInput, RegisterAccountInput } from './auth.dto';
 import { HttpExceptionFilter } from '../exception/httpException.filter';
 import * as jwt from 'jsonwebtoken';
-import moment = require('moment');
 import { Role } from '../entities/role.entity';
 import { Customer } from '../entities/customer.entity';
 import { AuthPayload } from './payload';
@@ -96,7 +95,7 @@ export class AuthService {
 
     existCustomer = await this.customerRepository.findOne({
       where: {
-        phone: registerAccountInput.phoneNumber,
+        phoneNumber: registerAccountInput.phoneNumber,
       },
     });
 
@@ -267,5 +266,48 @@ export class AuthService {
         HttpStatus.UNAUTHORIZED,
       );
     }
+  }
+
+  async getProfile(customerId: string) {
+    const existCustomer = await this.customerRepository.findOne({
+      where: {
+        id: customerId,
+      },
+    });
+
+    if (!existCustomer) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'CUSTOMER_NOT_EXIST',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return {
+      data: existCustomer,
+    };
+  }
+
+  async getProfileAdmin(employeeId: string) {
+    const existEmployee = await this.employeeRepository.findOne({
+      where: {
+        id: employeeId,
+      },
+    });
+
+    if (!existEmployee) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'EMPLOYEE_NOT_EXIST',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return {
+      data: existEmployee,
+    };
   }
 }

@@ -53,6 +53,9 @@ export class Customer {
   @Column('boolean', { default: true })
   acceptEmailMkt: boolean;
 
+  @Column('boolean', { default: true })
+  isActive: boolean;
+
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', select: false })
   createdAt: Date;
 

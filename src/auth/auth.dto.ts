@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Moment } from 'moment';
 
 export class LoginCustomerInput {
   @ApiProperty()

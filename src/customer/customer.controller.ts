@@ -19,7 +19,13 @@ import { CheckUUID } from '../lib/validatePipe/uuidPipe.class';
 import { GetUser } from '../auth/get-user.decorator';
 import { HttpExceptionFilter } from '../exception/httpException.filter';
 import { CheckUnSignIntPipe } from '../lib/validatePipe/checkIntegerPipe.class';
-import { AddProductInCartInput, UpdateCustomerAvatarInput, UpdateCustomerInput } from './customer.dto';
+import {
+  ActiveCustomerInput,
+  AddProductInCartInput,
+  CreateCustomerInput,
+  UpdateCustomerAvatarInput,
+  UpdateCustomerInput,
+} from './customer.dto';
 import { CustomerService } from './customer.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DELETE_CUSTOMER, FILTER_CUSTOMER } from '../role/codePermission';
@@ -92,5 +98,21 @@ export class CustomerController {
     @Body(new AddProductInCartPipe()) addProductInCartInput: AddProductInCartInput,
   ) {
     return await this.customerService.addProductInCart(customerId, addProductInCartInput);
+  }
+
+  @Post('create-customer')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([CREATE_CUSTOMER])
+  async createCustomer(@Body(new AddProductInCartPipe()) createCustomerInput: CreateCustomerInput) {
+    return await this.customerService.createCustomer(createCustomerInput);
+  }
+
+  @Post('active-customer')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([CREATE_CUSTOMER])
+  async activeCustomer(activeCustomerInput: ActiveCustomerInput) {
+    return await this.customerService.activeCustomer(activeCustomerInput);
   }
 }
