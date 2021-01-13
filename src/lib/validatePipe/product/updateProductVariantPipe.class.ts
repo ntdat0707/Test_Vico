@@ -28,18 +28,6 @@ export class UpdateProductVariantPipe implements PipeTransform<any> {
       }
     }
 
-    if (value.volume) {
-      if (!Number.isInteger(value.volume) || value.volume <= 0) {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.BAD_REQUEST,
-            message: 'VOLUME_INVALID',
-          },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-    }
-
     return value;
   }
 }

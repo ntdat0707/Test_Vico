@@ -590,6 +590,30 @@ export class ProductService {
         productId: createProductVariantInput.productId,
       },
     });
+
+    let countVariantCurrent = 0;
+    let countVariantNew = 0;
+    if (productVariants[0].volume) {
+      countVariantCurrent++;
+    }
+    if (productVariants[0].flavor) {
+      countVariantCurrent++;
+    }
+    if (createProductVariantInput.volume) {
+      countVariantNew++;
+    }
+    if (createProductVariantInput.flavor) {
+      countVariantNew++;
+    }
+    if (countVariantCurrent !== countVariantNew) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: 'COUNT_VARIANT_INCORRECT',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     let newProductVariant = new ProductVariant();
     newProductVariant.setAttributes(createProductVariantInput);
     newProductVariant.position = productVariants.length + 1;
@@ -817,19 +841,52 @@ export class ProductService {
       );
     }
 
-    const existItemCode = await this.productVariantRepository.findOne({
+    if (updateProductVariantInput.itemCode) {
+      const existItemCode = await this.productVariantRepository.findOne({
+        where: {
+          itemCode: updateProductVariantInput.itemCode,
+          id: Not(id),
+        },
+      });
+      if (existItemCode) {
+        throw new HttpException(
+          {
+            status: HttpStatus.CONFLICT,
+            error: 'ITEM_CODE_ALREADY_EXIST',
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
+    }
+
+    const productVariant = await this.productVariantRepository.findOne({
       where: {
-        itemCode: updateProductVariantInput.itemCode,
+        productId: existProductVariant.productId,
         id: Not(id),
       },
     });
-    if (existItemCode) {
+
+    let countVariantCurrent = 0;
+    let countVariantSame = 0;
+    if (productVariant.volume) {
+      countVariantSame++;
+    }
+    if (productVariant.flavor) {
+      countVariantSame++;
+    }
+    if (updateProductVariantInput.volume) {
+      countVariantCurrent++;
+    }
+    if (updateProductVariantInput.flavor) {
+      countVariantCurrent++;
+    }
+    if (countVariantCurrent !== countVariantSame) {
       throw new HttpException(
         {
-          status: HttpStatus.CONFLICT,
-          error: 'ITEM_CODE_ALREADY_EXIST',
+          status: HttpStatus.BAD_REQUEST,
+          error: 'COUNT_VARIANT_INCORRECT',
         },
-        HttpStatus.CONFLICT,
+        HttpStatus.BAD_REQUEST,
       );
     }
 

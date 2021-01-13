@@ -39,7 +39,7 @@ export class ProductVariant {
   readonly itemCode: string;
 
   @ApiProperty({ required: false })
-  readonly volume: number;
+  readonly volume: string;
 
   @ApiProperty({ required: false })
   readonly alt: string;
@@ -95,7 +95,7 @@ export class CreateProductInput {
   readonly flavor?: string;
 
   @ApiProperty({ required: false })
-  readonly volume?: number;
+  readonly volume?: string;
 
   @ApiProperty({ required: false })
   readonly avatar?: string;
@@ -210,7 +210,7 @@ export class CreateProductVariantInput {
   readonly itemCode: string;
 
   @ApiProperty({ required: false })
-  readonly volume: number;
+  readonly volume: string;
 
   @ApiProperty({ required: false })
   readonly alt: string;
@@ -295,7 +295,7 @@ export class UpdateProductVariantInput {
   readonly itemCode: string;
 
   @ApiProperty({ required: false })
-  readonly volume: number;
+  readonly volume: string;
 
   @ApiProperty({ required: false })
   readonly alt: string;
