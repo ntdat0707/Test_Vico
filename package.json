@@ -1,5 +1,5 @@
 {
-  "name": "wine-mart-backend",
+  "name": "midom-backend",
   "version": "0.0.1",
   "description": "",
   "author": "",
@@ -22,7 +22,7 @@
     "typeorm:migration:create": "npm run typeorm -- migration:create -n",
     "typeorm:migration:generate": "npm run typeorm -- migration:generate -n",
     "typeorm:migration:run": "npm run typeorm migration:run",
-    "typeorm:migration:revert": "npm run typeorm migration:revert -c migrations"
+    "typeorm:migration:revert": "ts-node ./node_modules/typeorm/cli.js migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^6.10.14",
