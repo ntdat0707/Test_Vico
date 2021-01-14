@@ -76,13 +76,13 @@ export class ProductController {
   @ApiBearerAuth()
   @UseGuards(OptionalGuard)
   @ApiQuery({ name: 'searchValue', required: false, type: String, isArray: true })
-  @ApiQuery({ name: 'categoryId', required: false })
+  // @ApiQuery({ name: 'categoryId', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async filterProduct(
     @Query('searchValue', new ConvertArray()) searchValue: string[],
     @GetUser('userId') userId: string,
-    @Query('categoryId', new CheckUUID()) categoryId: string,
+    @Param('categoryId', new CheckUUID()) categoryId: string,
     @Query('page', new CheckUnSignIntPipe()) page: number,
     @Query('limit', new CheckUnSignIntPipe()) limit: number,
   ) {

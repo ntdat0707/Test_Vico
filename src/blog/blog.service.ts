@@ -495,7 +495,7 @@ export class BlogService {
     const categoryBlogOfParents = [];
     const blogQuery = this.blogRepository
       .createQueryBuilder('blog')
-      .select(['blog.id', 'blog.title', 'blog.imageFeatured', 'blog.timePublication', 'blog.status'])
+      .select(['blog.id', 'blog.title', 'blog.imageFeatured', 'blog.timePublication', 'blog.status', 'blog.slugs'])
       .where('blog."deletedAt" is null')
       .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
       .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id')
@@ -593,6 +593,7 @@ export class BlogService {
         'blog.tags',
         'blog.timePublication',
         'blog.pageTitle',
+        'blog.slugs',
       ])
       .where('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
       .andWhere(`blog."status" = 'publish'`)
