@@ -76,17 +76,17 @@ export class ProductController {
   @ApiBearerAuth()
   @UseGuards(OptionalGuard)
   @ApiQuery({ name: 'searchValue', required: false, type: String, isArray: true })
-  // @ApiQuery({ name: 'categoryId', required: false })
+  @ApiQuery({ name: 'category', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async filterProduct(
     @Query('searchValue', new ConvertArray()) searchValue: string[],
     @GetUser('userId') userId: string,
-    @Param('categoryId', new CheckUUID()) categoryId: string,
+    @Query('category') category: string,
     @Query('page', new CheckUnSignIntPipe()) page: number,
     @Query('limit', new CheckUnSignIntPipe()) limit: number,
   ) {
-    return await this.productService.filterProduct(searchValue, userId, categoryId, page, limit);
+    return await this.productService.filterProduct(searchValue, userId, category, page, limit);
   }
 
   @Post('upload-image-product')

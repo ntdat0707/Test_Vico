@@ -1072,7 +1072,7 @@ export class ProductService {
   async filterProduct(
     searchValue: string[],
     userId: string,
-    categoryId: string,
+    category: string,
     page = 1,
     limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE),
   ) {
@@ -1110,19 +1110,21 @@ export class ProductService {
       countQuery.andWhere(bracket);
     }
 
-    if (categoryId) {
-      cacheKey += `categoryId${categoryId}`;
-      const categoryQuery = this.productCategoryRepository
+    if (category) {
+      cacheKey += `category${category}`;
+      const categoryQuery = this.categoryRepository.createQueryBuilder('category');
+      const productCategoryQuery = this.productCategoryRepository
         .createQueryBuilder('product_category')
-        .where('product_category."categoryId"=:categoryId');
+        .innerJoin(`(${categoryQuery.getQuery()})`, 'category', '"product_category"."categoryId"=category.category_id')
+        .where('category."category_slug"=:category');
 
       countQuery.innerJoin(
-        `(${categoryQuery.getQuery()})`,
+        `(${productCategoryQuery.getQuery()})`,
         'product_category',
         '"product_category"."product_category_productId"=product.id',
       );
       productQuery.innerJoin(
-        `(${categoryQuery.getQuery()})`,
+        `(${productCategoryQuery.getQuery()})`,
         'product_category',
         '"product_category"."product_category_productId"=product.id',
       );
@@ -1130,7 +1132,7 @@ export class ProductService {
 
     let count: any = 0;
     count = await countQuery
-      .setParameters({ searchValueJoin, status, categoryId, now })
+      .setParameters({ searchValueJoin, status, category, now })
       .cache(cacheKey, 30000)
       .getCount();
 
@@ -1152,7 +1154,7 @@ export class ProductService {
         'products.id=product_image."productId" and product_image."isAvatar"=true',
       )
       .orderBy('products."position"', 'ASC')
-      .setParameters({ searchValueJoin, status, categoryId, now })
+      .setParameters({ searchValueJoin, status, category, now })
       .cache(`${cacheKey}_limit${limit}_page${page}`, 30000)
       .getMany();
 

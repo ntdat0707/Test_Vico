@@ -641,8 +641,8 @@ export class BlogService {
 
     if (categoryBlogs?.length > 0) {
       cacheKey += 'categoryBlogs' + categoryBlogs.join(',');
-      blogQuery.andWhere('blog."categoryBlogId" IN (:...categoryBlogs)');
-      countQuery.andWhere('blog."categoryBlogId" IN (:...categoryBlogs)');
+      blogQuery.andWhere('category_blog.slug IN (:...categoryBlogs)');
+      countQuery.andWhere('category_blog.slug IN (:...categoryBlogs)');
     }
     const countBlog: number = await countQuery
       .limit(limit)
