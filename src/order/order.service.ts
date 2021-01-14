@@ -18,6 +18,7 @@ import { ProductImage } from '../entities/productImage.entity';
 import { mapDataOrder } from '../lib/mapData/mapDataOrder';
 import { convertTv } from '../lib/utils';
 import { ProductTopping } from '../entities/productTopping.entity';
+import { Cart } from 'src/entities/cart.entity';
 
 @Injectable()
 export class OrderService {
@@ -499,8 +500,9 @@ export class OrderService {
       await transactionalEntityManager.save<ProductVariant[]>(arrUpdateStockProductVariant);
       await transactionalEntityManager.save<Topping[]>(arrUpdateStockTopping);
       await transactionalEntityManager.save<Shipping>(existShipping);
+      await transactionalEntityManager.delete(Cart, { customerId: customerId });
     });
-
+    await this.connection.queryResultCache.clear();
     return { data: newOrder };
   }
 

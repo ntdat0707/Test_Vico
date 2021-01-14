@@ -495,13 +495,18 @@ export class BlogService {
     const categoryBlogOfParents = [];
     const blogQuery = this.blogRepository
       .createQueryBuilder('blog')
+      .select(['blog.id', 'blog.title', 'blog.imageFeatured', 'blog.timePublication', 'blog.status'])
       .where('blog."deletedAt" is null')
       .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
       .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id')
       .orderBy('"blog"."createdAt"', 'DESC')
       .limit(limit)
       .offset((page - 1) * limit);
-    const countQuery = this.blogRepository.createQueryBuilder('blog').where('blog."deletedAt" is null');
+    const countQuery = this.blogRepository
+      .createQueryBuilder('blog')
+      .where('blog."deletedAt" is null')
+      .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
+      .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id');
 
     if (searchValue) {
       searchValueConvert += `%${convertTv(searchValue)}%`;
@@ -580,6 +585,15 @@ export class BlogService {
     const categoryBlogOfParents = [];
     const blogQuery = this.blogRepository
       .createQueryBuilder('blog')
+      .select([
+        'blog.id',
+        'blog.title',
+        'blog.imageFeatured',
+        'blog.shortDescription',
+        'blog.tags',
+        'blog.timePublication',
+        'blog.pageTitle',
+      ])
       .where('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
       .andWhere(`blog."status" = 'publish'`)
       .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
