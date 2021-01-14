@@ -24,10 +24,6 @@ import { BlogTag } from '../entities/blogTag.entity';
         storage: diskStorage({
           destination: (req, file, cb) => cb(null, resolve('.', process.env.BLOG_IMAGE_PATH)),
           filename: (req: any, file: any, cb: any) => {
-            console.log(
-              '🚀 ~ file: blog.module.ts ~ line 30 ~ `${basename ~ basename(file.originalname, extname(file.originalname).toLowerCase())',
-              basename(file.originalname, extname(file.originalname).toLowerCase()),
-            );
             cb(
               null,
               `${basename(file.originalname, extname(file.originalname).toLowerCase())}_${shortid.generate()}${extname(

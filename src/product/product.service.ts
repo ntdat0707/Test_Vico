@@ -1082,6 +1082,7 @@ export class ProductService {
     const productQuery = this.productRepository
       .createQueryBuilder('product')
       .where('(product."timePublication" <=:now or product."timePublication" is null)', { now: now })
+      .orderBy('product."position"', 'ASC')
       .limit(limit)
       .offset((page - 1) * limit);
 

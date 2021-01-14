@@ -591,7 +591,9 @@ export class BlogService {
     const countQuery = this.blogRepository
       .createQueryBuilder('blog')
       .where('(blog."timePublication" <=:now or blog."timePublication" is null)', { now: new Date() })
-      .andWhere(`blog."status" = 'publish'`);
+      .andWhere(`blog."status" = 'publish'`)
+      .leftJoinAndMapOne('blog.categoryBlog', CategoryBlog, 'category_blog', '"blog"."categoryBlogId"=category_blog.id')
+      .leftJoinAndMapOne('blog.author', Employee, 'employee', '"blog"."authorId"=employee.id');
 
     if (searchValue) {
       searchValueConvert += `%${convertTv(searchValue)}%`;
