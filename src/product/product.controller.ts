@@ -190,4 +190,11 @@ export class ProductController {
   // async importProductVariant() {
   //   return await this.productService.importProductVariant();
   // }
+
+  @Get('/filter/get-product')
+  @ApiBearerAuth()
+  @UseGuards(OptionalGuard)
+  async getAllProduct() {
+    return await this.productService.getAllProduct();
+  }
 }

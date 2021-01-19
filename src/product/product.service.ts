@@ -1363,4 +1363,48 @@ export class ProductService {
       await transactionalEntityManager.save(arrProductVariant);
     });
   }
+
+  async getAllProduct() {
+    let cacheKey = 'get_all_product';
+    const now = new Date();
+    const status = true;
+    const productQuery = this.productRepository
+      .createQueryBuilder('product')
+      .where('(product."timePublication" <=:now or product."timePublication" is null)', { now: now })
+      .orderBy('product."position"', 'ASC');
+
+    const products = await this.productRepository
+      .createQueryBuilder('products')
+      .select('products.id')
+      .addSelect('products.name')
+      .addSelect('products.slugs')
+      .addSelect('products.itemCode')
+      .addSelect('products.price')
+      .addSelect('products.inStock')
+      .addSelect('products.sellOutOfStock')
+      .addSelect('products.position')
+      .addSelect('products.position')
+      .addSelect('products.position')
+      .innerJoin(`(${productQuery.getQuery()})`, 'product', '"product"."product_id"=products.id')
+      .leftJoinAndMapOne(
+        'products.image',
+        ProductImage,
+        'product_image',
+        'products.id=product_image."productId" and product_image."isAvatar"=true',
+      )
+      .leftJoinAndMapMany(
+        'products.categories',
+        ProductCategory,
+        'product_category',
+        'products.id=product_category."productId"',
+      )
+      .orderBy('products."position"', 'ASC')
+      .setParameters({ status, now })
+      .cache(`${cacheKey}`, 30000)
+      .getMany();
+
+    return {
+      data: products,
+    };
+  }
 }

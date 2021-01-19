@@ -38,7 +38,7 @@ export class Customer {
   @Column('uuid', { nullable: true })
   shippingDefaultId: string;
 
-  @Column('int2', { nullable: true })
+  @Column('int2', { default: 0 })
   gender: number;
 
   @Column('date', { nullable: true })
@@ -80,7 +80,7 @@ export class Customer {
     if (object.facebookId !== undefined) this.facebookId = object.facebookId;
     if (object.shippingDefaultId || object.shippingDefaultId === null)
       this.shippingDefaultId = object.shippingDefaultId;
-    if (object.gender || object.gender === 0 || object.gender === null) this.gender = object.gender;
+    if (object.gender || object.gender === 0) this.gender = object.gender;
     if (object.birthDay || object.birthDay === null) this.birthDay = object.birthDay;
     if (object.avatar !== undefined) this.avatar = object.avatar;
     if (object.address !== undefined) this.address = object.address;

@@ -35,14 +35,6 @@ export class ChangePasswordWithCodeInput {
   @ApiProperty()
   readonly code: string;
 }
-
-export class ChangePasswordInput {
-  @ApiProperty()
-  readonly currentPassword: string;
-  @ApiProperty()
-  readonly newPassword: string;
-}
-
 export class LoginSocialInput {
   @ApiProperty({ enum: ['facebook', 'google'] })
   readonly provider: string;

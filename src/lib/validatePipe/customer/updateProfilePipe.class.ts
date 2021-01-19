@@ -1,25 +1,12 @@
 import { PipeTransform, Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import * as moment from 'moment';
-import { checkEmail } from '../../pipeUtils/emailValidate';
 import { checkPhoneNumber } from '../../pipeUtils/phoneNumberValidate';
 import { checkInteger } from '../../pipeUtils/integerValidate';
-import { CreateCustomerInput } from '../../../customer/customer.dto';
+import { UpdateProfileInput } from '../../../customer/customer.dto';
 
 @Injectable()
-export class CreateCustomerPipe implements PipeTransform<any> {
-  async transform(value: CreateCustomerInput) {
-    if (value.email) {
-      if (!checkEmail(value.email)) {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.BAD_REQUEST,
-            message: 'EMAIL_NOT_VALID',
-          },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-    }
-
+export class UpdateProfilePipe implements PipeTransform<any> {
+  async transform(value: UpdateProfileInput) {
     if (value.phoneNumber) {
       if (!checkPhoneNumber(value.phoneNumber)) {
         throw new HttpException(

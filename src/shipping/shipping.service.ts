@@ -227,6 +227,7 @@ export class ShippingService {
       } else {
         const newShipping = new Shipping();
         newShipping.setAttributes(updateShippingInput);
+        newShipping.customerId = customerId;
         existShipping.status = false;
         shippingAddress = await transactionalEntityManager.save<Shipping>(newShipping);
         await transactionalEntityManager.save<Shipping>(existShipping);

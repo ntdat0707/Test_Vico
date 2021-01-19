@@ -7,7 +7,7 @@ import { Shipping } from '../entities/shipping.entity';
 import { Ward } from '../entities/ward.entity';
 import { Between, Connection, getManager, IsNull, Repository } from 'typeorm';
 import { Order } from '../entities/order.entity';
-import { CreateOrderInput, OrderFilterInput, UpdateOrderInput } from './order.dto';
+import { CreateOrderByAdminInput, CreateOrderInput, OrderFilterInput, UpdateOrderInput } from './order.dto';
 import { Product } from '../entities/product.entity';
 import { ProductVariant } from '../entities/productVariant.entity';
 import { Topping } from '../entities/topping.entity';
@@ -151,7 +151,7 @@ export class OrderService {
   }
 
   async getOrderByOrderCode(orderCode: string) {
-    this.logger.debug(`Running api getOrder at ${new Date()}`);
+    this.logger.debug(`Running api getOrderByOrderCode at ${new Date()}`);
     const order = await this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndMapOne('order.customer', Customer, 'customer', 'order.customerId = customer.id')
@@ -209,7 +209,7 @@ export class OrderService {
   }
 
   async createOrder(customerId: string, createOrderInput: CreateOrderInput) {
-    this.logger.debug(`Running api getToppingById at ${new Date()}`);
+    this.logger.debug(`Running api createOrder at ${new Date()}`);
     const currentDate = moment()
       .format('YY:MM:DD')
       .replace(/:/g, '');
@@ -230,9 +230,11 @@ export class OrderService {
       .leftJoinAndMapOne('shipping.district', District, 'district', '"shipping"."districtId"=district.id')
       .leftJoinAndMapOne('shipping.ward', Ward, 'ward', '"shipping"."wardId"=ward.id')
       .where('shipping.id=:id', { id: createOrderInput.shippingId })
+      .andWhere('shipping.status=:status', { status: true })
+      .where('shipping.customerId=:customerId', { customerId: customerId })
       .getOne();
 
-    if (!existShipping || existShipping.customerId !== customerId) {
+    if (!existShipping) {
       throw new HttpException(
         {
           statusCode: HttpStatus.NOT_FOUND,
@@ -263,7 +265,6 @@ export class OrderService {
           .where('"product_variant"."id" = :productVariantId', {
             productVariantId: orderDetail.id,
           })
-          .andWhere('"product_variant"."deletedAt" is null')
           .andWhere('("product"."timePublication" <=:now or "product"."timePublication" is null)', { now: new Date() })
           .getOne();
 
@@ -507,6 +508,7 @@ export class OrderService {
   }
 
   async orderFilter(orderFilterInput: OrderFilterInput) {
+    this.logger.debug(`Running api orderFilter at ${new Date()}`);
     const page = orderFilterInput.page || 1;
     const limit = orderFilterInput.limit || parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE);
     let cacheKey = 'filter_order';
@@ -624,6 +626,7 @@ export class OrderService {
   }
 
   async updateOrder(id: string, updateOrderInput: UpdateOrderInput) {
+    this.logger.debug(`Running api updateOrder at ${new Date()}`);
     const order = await this.orderRepository.findOne({
       where: {
         id: id,
@@ -759,5 +762,304 @@ export class OrderService {
     return {
       data: order,
     };
+  }
+
+  async createOrderByAdmin(createOrderByAdminInput: CreateOrderByAdminInput) {
+    this.logger.debug(`Running api createOrderByAdmin at ${new Date()}`);
+    const currentDate = moment()
+      .format('YY:MM:DD')
+      .replace(/:/g, '');
+    const beforeTime = moment().startOf('day'); // set to 12:00 am today
+    const afterTime = moment().endOf('day');
+    const count = await this.orderRepository.count({
+      where: {
+        createdAt: Between(beforeTime, afterTime),
+      },
+    });
+
+    const orderNumber = ('0000' + (count + 1)).slice(-4);
+    const orderCode = currentDate + orderNumber;
+
+    const existShipping = await this.shippingRepository
+      .createQueryBuilder('shipping')
+      .leftJoinAndMapOne('shipping.province', Province, 'province', '"shipping"."provinceId"=province.id')
+      .leftJoinAndMapOne('shipping.district', District, 'district', '"shipping"."districtId"=district.id')
+      .leftJoinAndMapOne('shipping.ward', Ward, 'ward', '"shipping"."wardId"=ward.id')
+      .where('shipping.id=:id', { id: createOrderByAdminInput.shippingId })
+      .andWhere('shipping.status=:status', { status: true })
+      .where('shipping.customerId=:customerId', { customerId: createOrderByAdminInput.customerId })
+      .getOne();
+
+    if (!existShipping) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'SHIPPING_NOT_EXIST',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const arrUpdateStockProductVariant = [];
+    const arrUpdateStockTopping = [];
+    let totalQuantity = 0;
+    let totalPrice = 0;
+    const totalDiscount = 0;
+    let isInArrUpdateTopping = false;
+    let isInArrUpdateVariant = false;
+    if (createOrderByAdminInput.orderDetails?.length > 0) {
+      for (const orderDetail of createOrderByAdminInput.orderDetails) {
+        let totalPriceDetail = 0;
+        const product: any = await this.productRepository
+          .createQueryBuilder('product')
+          .innerJoinAndMapOne(
+            'product.productVariant',
+            ProductVariant,
+            'product_variant',
+            'product.id = product_variant.productId',
+          )
+          .where('"product_variant"."id" = :productVariantId', {
+            productVariantId: orderDetail.id,
+          })
+          .andWhere('("product"."timePublication" <=:now or "product"."timePublication" is null)', { now: new Date() })
+          .getOne();
+
+        if (!product) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.NOT_FOUND,
+              message: 'PRODUCT_VARIANT_NOT_EXIST',
+            },
+            HttpStatus.NOT_FOUND,
+          );
+        }
+
+        if (
+          (product.toppingAvailable === false || product.numberToppingAllow < 1) &&
+          orderDetail.toppings?.length > 0
+        ) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'CANNOT_ORDER_TOPPING',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        if (product.productVariant.inStock === 0 && !product.sellOutOfStock) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'PRODUCT_VARIANT_OUT_OF_STOCK',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        if (orderDetail.unitPrice !== product.productVariant.price) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'UNIT_PRICE_INCORRECT',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        totalPriceDetail += orderDetail.unitPrice;
+        if (orderDetail.toppings?.length > 0) {
+          let totalTopping = 0;
+          for (const topping of orderDetail.toppings) {
+            const existProductTopping = await this.productToppingRepository.findOne({
+              where: {
+                productId: product.id,
+                toppingId: topping.id,
+              },
+            });
+            if (!existProductTopping) {
+              throw new HttpException(
+                {
+                  statusCode: HttpStatus.BAD_REQUEST,
+                  message: 'CANNOT_ORDER_TOPPING',
+                },
+                HttpStatus.BAD_REQUEST,
+              );
+            }
+            const existTopping = await this.toppingRepository.findOne({
+              where: {
+                id: topping.id,
+              },
+            });
+            if (!existTopping) {
+              throw new HttpException(
+                {
+                  statusCode: HttpStatus.NOT_FOUND,
+                  message: 'TOPPING_NOT_EXIST',
+                },
+                HttpStatus.NOT_FOUND,
+              );
+            }
+            if (existTopping.price !== topping.price) {
+              throw new HttpException(
+                {
+                  statusCode: HttpStatus.BAD_REQUEST,
+                  message: 'TOPPING_PRICE_INVALID',
+                },
+                HttpStatus.BAD_REQUEST,
+              );
+            }
+            totalTopping += topping.quantity;
+            totalPriceDetail += topping.price * topping.quantity;
+            for (const updateTopping of arrUpdateStockTopping) {
+              isInArrUpdateTopping = false;
+              if (updateTopping.id === existTopping.id) {
+                updateTopping.inStock -= topping.quantity * orderDetail.quantity;
+                if (updateTopping.inStock < 0) {
+                  throw new HttpException(
+                    {
+                      statusCode: HttpStatus.BAD_REQUEST,
+                      message: 'TOPPING_OUT_OF_STOCK',
+                    },
+                    HttpStatus.BAD_REQUEST,
+                  );
+                }
+                isInArrUpdateTopping = true;
+                break;
+              }
+            }
+            if (!isInArrUpdateTopping) {
+              existTopping.inStock -= topping.quantity * orderDetail.quantity;
+              if (existTopping.inStock < 0) {
+                throw new HttpException(
+                  {
+                    statusCode: HttpStatus.BAD_REQUEST,
+                    message: 'TOPPING_OUT_OF_STOCK',
+                  },
+                  HttpStatus.BAD_REQUEST,
+                );
+              }
+              arrUpdateStockTopping.push(existTopping);
+            }
+          }
+          if (totalTopping > product.numberToppingAllow) {
+            throw new HttpException(
+              {
+                statusCode: HttpStatus.BAD_REQUEST,
+                message: `TOPPING_ALLOW_ONLY_${product.numberToppingAllow}`,
+              },
+              HttpStatus.BAD_REQUEST,
+            );
+          }
+        }
+
+        if (totalPriceDetail !== orderDetail.totalPrice) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'TOTAL_PRICE_IN_ORDER_DETAIL_INCORRECT',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        totalQuantity += orderDetail.quantity;
+        totalPrice += orderDetail.totalPrice * orderDetail.quantity;
+        for (const updateProductVariant of arrUpdateStockProductVariant) {
+          isInArrUpdateVariant = false;
+          if (updateProductVariant.id === product.productVariant.id) {
+            updateProductVariant.inStock -= orderDetail.quantity;
+            if (updateProductVariant.inStock < 0) {
+              throw new HttpException(
+                {
+                  statusCode: HttpStatus.BAD_REQUEST,
+                  message: 'PRODUCT_VARIANT_OUT_OF_STOCK',
+                },
+                HttpStatus.BAD_REQUEST,
+              );
+            }
+            isInArrUpdateVariant = true;
+            break;
+          }
+        }
+        if (!isInArrUpdateVariant) {
+          product.productVariant.inStock -= orderDetail.quantity;
+          if (product.productVariant.inStock < 0) {
+            throw new HttpException(
+              {
+                statusCode: HttpStatus.BAD_REQUEST,
+                message: 'PRODUCT_VARIANT_OUT_OF_STOCK',
+              },
+              HttpStatus.BAD_REQUEST,
+            );
+          }
+          arrUpdateStockProductVariant.push(product.productVariant);
+        }
+      }
+    }
+
+    if (totalPrice - totalDiscount !== createOrderByAdminInput.orderAmount) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'ORDER_AMOUNT_WRONG',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (totalDiscount !== createOrderByAdminInput.totalDiscount) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'TOTAL_DISCOUNT_WRONG',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (totalQuantity !== createOrderByAdminInput.orderQuantity) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'ORDER_QUANTITY_WRONG',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    let newOrder = new Order();
+    let newOrderDetail: OrderDetail;
+    let newOrderDetailTopping: OrderDetailTopping;
+    const arrOrderDetail = [];
+    const arrOrderDetailTopping = [];
+    existShipping.isHaveOrder = true;
+    newOrder.setAttributes(createOrderByAdminInput);
+    newOrder.customerId = createOrderByAdminInput.customerId;
+    newOrder.orderCode = orderCode;
+    await getManager().transaction(async transactionalEntityManager => {
+      newOrder = await transactionalEntityManager.save<Order>(newOrder);
+      if (createOrderByAdminInput.orderDetails?.length > 0) {
+        for (const orderDetail of createOrderByAdminInput.orderDetails) {
+          newOrderDetail = new OrderDetail();
+          newOrderDetail.setAttributes(orderDetail);
+          newOrderDetail.orderId = newOrder.id;
+          newOrderDetail = await transactionalEntityManager.save<OrderDetail>(newOrderDetail);
+          for (const topping of orderDetail.toppings) {
+            newOrderDetailTopping = new OrderDetailTopping();
+            newOrderDetailTopping.toppingId = topping.id;
+            newOrderDetailTopping.quantity = topping.quantity * orderDetail.quantity;
+            newOrderDetailTopping.unitPrice = topping.price;
+            newOrderDetailTopping.orderDetailId = newOrderDetail.id;
+            arrOrderDetailTopping.push(newOrderDetailTopping);
+          }
+        }
+      }
+      await transactionalEntityManager.save<OrderDetail[]>(arrOrderDetail);
+      await transactionalEntityManager.save<OrderDetailTopping[]>(arrOrderDetailTopping);
+      await transactionalEntityManager.save<ProductVariant[]>(arrUpdateStockProductVariant);
+      await transactionalEntityManager.save<Topping[]>(arrUpdateStockTopping);
+      await transactionalEntityManager.save<Shipping>(existShipping);
+      // await transactionalEntityManager.delete(Cart, { customerId: customerId });
+    });
+    await this.connection.queryResultCache.clear();
+    return { data: newOrder };
   }
 }

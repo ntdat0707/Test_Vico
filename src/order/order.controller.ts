@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseFilters, UseGuards }
 import { OrderService } from './order.service';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { HttpExceptionFilter } from '../exception/httpException.filter';
-import { CreateOrderInput, OrderFilterInput, UpdateOrderInput } from './order.dto';
+import { CreateOrderByAdminInput, CreateOrderInput, OrderFilterInput, UpdateOrderInput } from './order.dto';
 import { CreateOrderPipe } from '../lib/validatePipe/order/createOrderPipe.class';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../role/roles.guard';
@@ -82,5 +82,12 @@ export class OrderController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   updateOrder(@Param('id') id: string, @Body(new UpdateOrderPipe()) updateOrderInput: UpdateOrderInput) {
     return this.orderService.updateOrder(id, updateOrderInput);
+  }
+
+  @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  createOrderByAdmin(@Body(new CreateOrderPipe()) createOrderByAdminInput: CreateOrderByAdminInput) {
+    return this.orderService.createOrderByAdmin(createOrderByAdminInput);
   }
 }

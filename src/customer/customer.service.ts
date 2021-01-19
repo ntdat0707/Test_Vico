@@ -3,11 +3,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Customer } from '../entities/customer.entity';
 import { Brackets, Connection, getManager, In, IsNull, Repository } from 'typeorm';
 import { convertTv } from '../lib/utils';
-import { ActiveCustomerInput, AddProductInCartInput, CreateCustomerInput, UpdateCustomerInput } from './customer.dto';
+import {
+  ActiveCustomerInput,
+  AddProductInCartInput,
+  ChangePasswordInput,
+  CreateCustomerInput,
+  UpdateCustomerInput,
+  UpdateProfileInput,
+} from './customer.dto';
 import { Shipping } from '../entities/shipping.entity';
 import { ProductVariant } from '../product/product.dto';
 import { Product } from '../entities/product.entity';
 import { Cart } from '../entities/cart.entity';
+import * as bcrypt from 'bcryptjs';
+import { Order } from '../entities/order.entity';
+import { OrderDetail } from '../entities/orderDetail.entity';
 
 @Injectable()
 export class CustomerService {
@@ -16,6 +26,7 @@ export class CustomerService {
     @InjectRepository(Shipping) private shippingRepository: Repository<Shipping>,
     @InjectRepository(Cart) private cartRepository: Repository<Cart>,
     @InjectRepository(ProductVariant) private productVariantRepository: Repository<ProductVariant>,
+    @InjectRepository(OrderDetail) private orderDetailRepository: Repository<OrderDetail>,
     private connection: Connection,
   ) {}
   async updateCustomerAvatar(customerId: string, avatar: any) {
@@ -324,10 +335,128 @@ export class CustomerService {
       );
     }
 
+    if (!existCustomer.email && !activeCustomerInput.email) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'EMAIL_REQUIRED',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
     existCustomer.isActive = true;
 
+    existCustomer.setAttributes(activeCustomerInput);
+    await this.customerRepository.save(existCustomer);
     return {
       data: existCustomer,
+    };
+  }
+
+  async updateProfile(customerId: string, updateProfileInput: UpdateProfileInput) {
+    let existCustomer: Customer;
+    if (updateProfileInput.phoneNumber) {
+      existCustomer = await this.customerRepository.findOne({
+        where: {
+          phoneNumber: updateProfileInput.phoneNumber,
+          deletedAt: IsNull(),
+        },
+      });
+
+      if (existCustomer && existCustomer.id !== customerId) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.CONFLICT,
+            message: 'PHONE_EXISTED',
+          },
+          HttpStatus.CONFLICT,
+        );
+      }
+    }
+
+    existCustomer = await this.customerRepository.findOne({
+      where: {
+        id: customerId,
+      },
+    });
+
+    if (!existCustomer) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.CONFLICT,
+          message: 'CUSTOMER_NOT_EXIST',
+        },
+        HttpStatus.CONFLICT,
+      );
+    }
+    existCustomer.setAttributes(updateProfileInput);
+    await this.customerRepository.save(existCustomer);
+    await this.connection.queryResultCache.clear();
+    return {
+      data: existCustomer,
+    };
+  }
+
+  async changePassword(customerId: string, changePasswordInput: ChangePasswordInput) {
+    const existCustomer = await this.customerRepository.findOne({
+      where: {
+        id: customerId,
+      },
+    });
+
+    if (!existCustomer) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.CONFLICT,
+          message: 'CUSTOMER_NOT_EXIST',
+        },
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    const passwordIsValid = bcrypt.compareSync(changePasswordInput.currentPassword, existCustomer.password);
+    if (!passwordIsValid) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+          message: 'INCORRECT_CURRENT_PASSWORD',
+        },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+    const hashPassword: string = await bcrypt.hash(changePasswordInput.newPassword, 10);
+    existCustomer.password = hashPassword;
+    await this.customerRepository.save(existCustomer);
+    await this.connection.queryResultCache.clear();
+    return {
+      data: existCustomer,
+    };
+  }
+
+  async getAllShippingByCustomer(customerId: string) {
+    const shippings = await this.shippingRepository.find({
+      where: {
+        customerId: customerId,
+        status: true,
+      },
+      cache: { id: `get_all_shipping_by_customer_id${customerId}`, milliseconds: 30000 },
+    });
+
+    return {
+      data: shippings,
+    };
+  }
+
+  async getAllOrderByCustomer(customerId: string) {
+    const orders = await this.connection
+      .createQueryBuilder(Order, 'order')
+      .orderBy('"order"."createdAt"', 'DESC')
+      .innerJoinAndMapMany('order.orderDetails', OrderDetail, 'order_detail', 'order.id = order_detail.orderId')
+      .cache(`get_all_order_by_customer_${customerId}`)
+      .getMany();
+    return {
+      data: orders,
     };
   }
 }

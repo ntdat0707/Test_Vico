@@ -196,3 +196,38 @@ export class ConfirmPaymentInput {
   @ApiProperty()
   readonly urlResponse: string;
 }
+
+export class CreateOrderByAdminInput {
+  @ApiProperty()
+  readonly customerId: string;
+
+  @ApiProperty()
+  readonly totalDiscount: number;
+
+  @ApiProperty()
+  readonly shippingId: string;
+
+  @ApiProperty()
+  readonly shippingAmount: number;
+
+  @ApiProperty()
+  readonly orderAmount: number;
+
+  @ApiProperty()
+  readonly orderQuantity: number;
+
+  @ApiProperty()
+  readonly paymentType: string;
+
+  @ApiProperty()
+  readonly source: string;
+
+  @ApiProperty()
+  readonly note?: string;
+
+  @ApiProperty({ required: false, type: Date })
+  readonly shippingTime?: Date;
+
+  @ApiProperty({ type: [OrderDetail] })
+  readonly orderDetails: OrderDetail[];
+}

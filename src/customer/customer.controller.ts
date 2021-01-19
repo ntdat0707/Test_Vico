@@ -22,9 +22,11 @@ import { CheckUnSignIntPipe } from '../lib/validatePipe/checkIntegerPipe.class';
 import {
   ActiveCustomerInput,
   AddProductInCartInput,
+  ChangePasswordInput,
   CreateCustomerInput,
   UpdateCustomerAvatarInput,
   UpdateCustomerInput,
+  UpdateProfileInput,
 } from './customer.dto';
 import { CustomerService } from './customer.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -32,6 +34,8 @@ import { DELETE_CUSTOMER, FILTER_CUSTOMER } from '../role/codePermission';
 import { Roles } from '../role/role.decorators';
 import { RolesGuard } from '../role/roles.guard';
 import { AddProductInCartPipe } from '../lib/validatePipe/customer/addProductInCard.class';
+import { UpdateProfilePipe } from '../lib/validatePipe/customer/updateProfilePipe.class';
+import { ActiveCustomerPipe } from '../lib/validatePipe/customer/activeCustomerPipe.class';
 @Controller('customer')
 @ApiTags('Customer')
 @UseFilters(new HttpExceptionFilter())
@@ -112,7 +116,41 @@ export class CustomerController {
   // @ApiBearerAuth()
   // @UseGuards(JwtAuthGuard, RolesGuard)
   // @Roles([CREATE_CUSTOMER])
-  async activeCustomer(activeCustomerInput: ActiveCustomerInput) {
+  async activeCustomer(@Body(new ActiveCustomerPipe()) activeCustomerInput: ActiveCustomerInput) {
     return await this.customerService.activeCustomer(activeCustomerInput);
+  }
+
+  @Put('/profile/update')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async updateProfile(
+    @GetUser('userId') customerId: string,
+    @Body(new UpdateProfilePipe()) updateProfileInput: UpdateProfileInput,
+  ) {
+    return await this.customerService.updateProfile(customerId, updateProfileInput);
+  }
+
+  @Put('/profile/change-password')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async changePassword(
+    @GetUser('userId') customerId: string,
+    @Body(new UpdateProfilePipe()) changePasswordInput: ChangePasswordInput,
+  ) {
+    return await this.customerService.changePassword(customerId, changePasswordInput);
+  }
+
+  @Get('/profile/get-all-shipping')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getAllShippingByCustomer(@GetUser('userId') customerId: string) {
+    return await this.customerService.getAllShippingByCustomer(customerId);
+  }
+
+  @Get('/profile/get-all-order')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getAllOrderByCustomer(@GetUser('userId') customerId: string) {
+    return await this.customerService.getAllOrderByCustomer(customerId);
   }
 }

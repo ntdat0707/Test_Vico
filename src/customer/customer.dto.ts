@@ -113,4 +113,32 @@ export class CreateCustomerInput {
 export class ActiveCustomerInput {
   @ApiProperty()
   readonly customerId: string;
+
+  @ApiProperty({ required: false })
+  readonly phoneNumber: string;
+
+  @ApiProperty({ required: false })
+  readonly email: string;
+}
+
+export class UpdateProfileInput {
+  @ApiProperty({ required: false })
+  readonly phoneNumber: string;
+
+  @ApiProperty({ required: false })
+  readonly gender?: number;
+
+  @ApiProperty({ required: false })
+  readonly birthDay?: Date;
+
+  @ApiProperty()
+  readonly fullName: string;
+}
+
+export class ChangePasswordInput {
+  @ApiProperty()
+  readonly currentPassword: string;
+
+  @ApiProperty()
+  readonly newPassword: string;
 }
