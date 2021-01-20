@@ -55,7 +55,7 @@ export class CreateCustomerPipe implements PipeTransform<any> {
       }
     }
 
-    if (value.gender && !checkInteger(value.gender) && Number(value.gender) !== 0) {
+    if (value.gender !== 0 && value.gender !== 1 && value.gender !== 2) {
       throw new HttpException(
         {
           statusCode: HttpStatus.BAD_REQUEST,

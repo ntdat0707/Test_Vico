@@ -14,7 +14,7 @@ export class Order {
   @Column('varchar')
   source: string;
 
-  @Column('uuid')
+  @Column('uuid', { nullable: true })
   shippingId: string;
 
   @Column('integer')

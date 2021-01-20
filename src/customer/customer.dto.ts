@@ -85,9 +85,26 @@ export class GetProductInCartInput {
   productVariantIds?: string[];
 }
 
+class CartTopping {
+  @ApiProperty()
+  readonly id: string;
+
+  @ApiProperty()
+  readonly quantity: number;
+}
+
 export class AddProductInCartInput {
   @ApiProperty()
   readonly productVariantId: string;
+
+  @ApiProperty()
+  readonly quantity: number;
+
+  @ApiProperty()
+  readonly number: number;
+
+  @ApiProperty({ type: [CartTopping], required: false })
+  readonly toppings: CartTopping[];
 }
 
 export class CreateCustomerInput {

@@ -42,6 +42,14 @@ import { ActiveCustomerPipe } from '../lib/validatePipe/customer/activeCustomerP
 export class CustomerController {
   constructor(private customerService: CustomerService) {}
 
+  @Get(':customerId')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([FILTER_CUSTOMER])
+  async getCustomer(@Param('customerId') customerId: string) {
+    return await this.customerService.getCustomer(customerId);
+  }
+
   @Put('/update-avatar')
   @UseInterceptors(FileInterceptor('avatar'))
   @ApiConsumes('multipart/form-data')
@@ -52,15 +60,15 @@ export class CustomerController {
     return await this.customerService.updateCustomerAvatar(customerId, avatar);
   }
 
-  @Get('/search/:searchValue')
-  @ApiParam({ name: 'searchValue', required: false })
+  @Get('/filter/get-all-customer')
+  @ApiQuery({ name: 'searchValue', required: false })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles([FILTER_CUSTOMER])
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([FILTER_CUSTOMER])
   async filterCustomer(
-    @Param('searchValue') searchValue: string,
+    @Query('searchValue') searchValue: string,
     @Query('page', new CheckUnSignIntPipe()) page: number,
     @Query('limit', new CheckUnSignIntPipe()) limit: number,
   ) {

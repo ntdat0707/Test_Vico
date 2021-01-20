@@ -22,5 +22,10 @@ enum EPaymentType {
   COD = 'COD',
   BANKING = 'banking',
 }
+enum EProductSugarOpt {
+  NATURAL,
+  SUGAR_5ML,
+  SUGAR_10ML,
+}
 
-export { EShippingPlace, EOrderSource, EBlogStatus, EPaymentType };
+export { EShippingPlace, EOrderSource, EBlogStatus, EPaymentType, EProductSugarOpt };

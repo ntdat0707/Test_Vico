@@ -257,11 +257,11 @@ export class CreateOrderPipe implements PipeTransform<any> {
               HttpStatus.BAD_REQUEST,
             );
           }
-          if (!topping.price && topping.price !== 0) {
+          if (!topping.price) {
             throw new HttpException(
               {
                 statusCode: HttpStatus.BAD_REQUEST,
-                message: 'PRICE_REQUIRED',
+                message: 'TOPPING_PRICE_REQUIRED',
               },
               HttpStatus.BAD_REQUEST,
             );
@@ -270,7 +270,25 @@ export class CreateOrderPipe implements PipeTransform<any> {
             throw new HttpException(
               {
                 statusCode: HttpStatus.BAD_REQUEST,
-                message: 'PRICE_INVALID',
+                message: 'TOPPING_PRICE_INVALID',
+              },
+              HttpStatus.BAD_REQUEST,
+            );
+          }
+          if (!topping.quantity) {
+            throw new HttpException(
+              {
+                statusCode: HttpStatus.BAD_REQUEST,
+                message: 'TOPPING_PRICE_REQUIRED',
+              },
+              HttpStatus.BAD_REQUEST,
+            );
+          }
+          if (!Number.isInteger(topping.quantity) && topping.quantity < 0) {
+            throw new HttpException(
+              {
+                statusCode: HttpStatus.BAD_REQUEST,
+                message: 'TOPPING_PRICE_INVALID',
               },
               HttpStatus.BAD_REQUEST,
             );

@@ -10,6 +10,9 @@ export class Cart {
   @Column('uuid')
   productVariantId: string;
 
+  @Column('integer')
+  quantity: number;
+
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', select: false })
   createdAt: Date;
 

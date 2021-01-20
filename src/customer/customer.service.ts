@@ -27,6 +27,7 @@ export class CustomerService {
     @InjectRepository(Cart) private cartRepository: Repository<Cart>,
     @InjectRepository(ProductVariant) private productVariantRepository: Repository<ProductVariant>,
     @InjectRepository(OrderDetail) private orderDetailRepository: Repository<OrderDetail>,
+    @InjectRepository(Order) private orderRepository: Repository<Order>,
     private connection: Connection,
   ) {}
   async updateCustomerAvatar(customerId: string, avatar: any) {
@@ -72,7 +73,7 @@ export class CustomerService {
       searchValueConvert = `%${convertTv(searchValue)}%`;
       cacheKey += '_searchValue' + searchValue;
       const bracket = new Brackets(qb => {
-        qb.where(`"customer"."phone" like '${searchValueConvert}'`)
+        qb.where(`"customer"."phoneNumber" like '${searchValueConvert}'`)
           .orWhere(`LOWER(convertTVkdau("customer"."fullName")) like '${searchValueConvert}'`)
           .orWhere(`"customer"."email" like '%${searchValue}%'`)
           .orWhere(`LOWER("customer"."code") like '%${searchValue}%'`);
@@ -457,6 +458,61 @@ export class CustomerService {
       .getMany();
     return {
       data: orders,
+    };
+  }
+
+  async getCustomer(customerId: string) {
+    const customer: any = await this.connection
+      .createQueryBuilder(Customer, 'customer')
+      .select([
+        'customer.id',
+        'customer.email',
+        'customer.fullName',
+        'customer.shippingDefaultId',
+        'customer.avatar',
+        'customer.birthDay',
+        'customer.code',
+        'customer.gender',
+        'customer.isActive',
+        'shipping',
+      ])
+      .leftJoinAndMapOne(
+        'customer.shippingDefault',
+        Shipping,
+        'shipping',
+        'customer."shippingDefaultId" = shipping."id"',
+      )
+      .cache(`get_customer_${customerId}`)
+      .where('customer.id =:customerId', { customerId: customerId })
+      .getOne();
+
+    if (!customer) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'CUSTOMER_NOT_FOUND',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const orders = await this.orderRepository.find({
+      where: {
+        customerId: customerId,
+      },
+    });
+
+    let totalRevenue = 0;
+
+    for (let i = 0; i < orders.length; i++) {
+      totalRevenue += orders[i].orderAmount;
+    }
+
+    customer.totalRevenue = totalRevenue;
+    customer.totalOrder = orders.length;
+
+    return {
+      data: customer,
     };
   }
 }

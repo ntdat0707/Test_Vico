@@ -23,6 +23,66 @@ export class AddProductInCartPipe implements PipeTransform<any> {
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    if (!value.quantity) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'QUANTITY_REQUIRED',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    if (!Number.isInteger(value.quantity) && value.quantity < 0) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'QUANTITY_INVALID',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (Array.isArray(value.toppings) && value.toppings?.length > 0) {
+      for (const topping of value.toppings) {
+        if (!topping.id) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'TOPPING_ID_REQUIRED',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        if (!checkUUID(topping.id)) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'ID_INVALID',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        if (!topping.quantity) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'TOPPING_QUANTITY_REQUIRED',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        if (!Number.isInteger(topping.quantity) || topping.quantity < 0) {
+          throw new HttpException(
+            {
+              statusCode: HttpStatus.BAD_REQUEST,
+              message: 'TOPPING_QUANTITY_INVALID',
+            },
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+      }
+    }
     return value;
   }
 }

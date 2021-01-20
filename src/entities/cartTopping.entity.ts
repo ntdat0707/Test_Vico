@@ -1,24 +1,18 @@
 import { Entity, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Column, DeleteDateColumn } from 'typeorm';
 
 @Entity()
-export class OrderDetail {
+export class CartTopping {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column('uuid')
-  productVariantId: string;
+  cartId: string;
+
+  @Column('uuid')
+  toppingId: string;
 
   @Column('integer')
   quantity: number;
-
-  @Column('integer')
-  unitPrice: number;
-
-  @Column('uuid')
-  orderId: string;
-
-  @Column('integer', { default: 0 })
-  discount: number;
 
   @Column('integer', { nullable: true })
   sugar: number;
@@ -33,10 +27,7 @@ export class OrderDetail {
   deletedAt: Date;
 
   setAttributes(object: any) {
-    if (object.id !== undefined) this.productVariantId = object.id;
+    if (object.id) this.toppingId = object.id;
     if (object.quantity || object.quantity === 0) this.quantity = parseInt(object.quantity);
-    if (object.totalPrice || object.totalPrice === 0) this.unitPrice = parseInt(object.totalPrice);
-    if (object.discount || object.discount === 0) this.discount = parseInt(object.discount);
-    if (object.sugar || object.sugar === 0) this.sugar = parseInt(object.sugar);
   }
 }
