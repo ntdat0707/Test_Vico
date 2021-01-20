@@ -14,9 +14,6 @@ export class CartTopping {
   @Column('integer')
   quantity: number;
 
-  @Column('integer', { nullable: true })
-  sugar: number;
-
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', select: false })
   createdAt: Date;
 

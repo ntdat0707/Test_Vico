@@ -13,6 +13,8 @@ import { ProductVariant } from '../entities/productVariant.entity';
 import { Cart } from '../entities/cart.entity';
 import { OrderDetail } from '../entities/orderDetail.entity';
 import { Order } from '../entities/order.entity';
+import { Topping } from '../entities/topping.entity';
+import { CartTopping } from '../entities/cartTopping.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -26,6 +28,8 @@ import { Order } from '../entities/order.entity';
       Cart,
       OrderDetail,
       Order,
+      Topping,
+      CartTopping,
     ]),
   ],
   providers: [CustomerService, RoleService],

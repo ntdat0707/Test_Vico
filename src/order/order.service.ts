@@ -18,7 +18,8 @@ import { ProductImage } from '../entities/productImage.entity';
 import { mapDataOrder } from '../lib/mapData/mapDataOrder';
 import { convertTv } from '../lib/utils';
 import { ProductTopping } from '../entities/productTopping.entity';
-import { Cart } from 'src/entities/cart.entity';
+import { Cart } from '../entities/cart.entity';
+import { CartTopping } from '../entities/cartTopping.entity';
 
 @Injectable()
 export class OrderService {
@@ -42,6 +43,8 @@ export class OrderService {
     private toppingRepository: Repository<Topping>,
     @InjectRepository(Customer)
     private customerRepository: Repository<Customer>,
+    @InjectRepository(Cart) private cartRepository: Repository<Cart>,
+    @InjectRepository(CartTopping) private cartToppingRepository: Repository<CartTopping>,
     private connection: Connection,
   ) {}
 
@@ -468,7 +471,6 @@ export class OrderService {
         HttpStatus.BAD_REQUEST,
       );
     }
-
     let newOrder = new Order();
     let newOrderDetail: OrderDetail;
     let newOrderDetailTopping: OrderDetailTopping;
@@ -478,6 +480,7 @@ export class OrderService {
     newOrder.setAttributes(createOrderInput);
     newOrder.customerId = customerId;
     newOrder.orderCode = orderCode;
+
     await getManager().transaction(async transactionalEntityManager => {
       newOrder = await transactionalEntityManager.save<Order>(newOrder);
       if (createOrderInput.orderDetails?.length > 0) {
@@ -501,7 +504,24 @@ export class OrderService {
       await transactionalEntityManager.save<ProductVariant[]>(arrUpdateStockProductVariant);
       await transactionalEntityManager.save<Topping[]>(arrUpdateStockTopping);
       await transactionalEntityManager.save<Shipping>(existShipping);
-      await transactionalEntityManager.delete(Cart, { customerId: customerId });
+      const existCart = await this.cartRepository.findOne({
+        where: {
+          customerId: customerId,
+        },
+      });
+
+      let cartToppings = [];
+      if (existCart) {
+        cartToppings = await this.cartToppingRepository.find({
+          where: {
+            cartId: existCart.id,
+          },
+        });
+        await transactionalEntityManager.remove<Cart>(existCart);
+        if (cartToppings.length > 0) {
+          await transactionalEntityManager.remove<CartTopping[]>(cartToppings);
+        }
+      }
     });
     await this.connection.queryResultCache.clear();
     return { data: newOrder };

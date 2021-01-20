@@ -101,7 +101,7 @@ export class AddProductInCartInput {
   readonly quantity: number;
 
   @ApiProperty()
-  readonly number: number;
+  readonly sugar: number;
 
   @ApiProperty({ type: [CartTopping], required: false })
   readonly toppings: CartTopping[];
@@ -158,4 +158,28 @@ export class ChangePasswordInput {
 
   @ApiProperty()
   readonly newPassword: string;
+}
+
+export class DeleteProductInCartInput {
+  @ApiProperty()
+  readonly cartId: string;
+}
+
+export class UpdateCartInput {
+  @ApiProperty()
+  readonly productVariantId: string;
+
+  @ApiProperty()
+  readonly quantity: number;
+
+  @ApiProperty()
+  readonly sugar: number;
+
+  @ApiProperty({ type: [CartTopping], required: false })
+  readonly toppings: CartTopping[];
+}
+
+export class RefreshCartInput {
+  @ApiProperty({ type: [AddProductInCartInput], required: false })
+  readonly productsInCart: AddProductInCartInput[];
 }

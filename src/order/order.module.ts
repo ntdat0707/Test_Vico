@@ -15,6 +15,8 @@ import { Topping } from '../entities/topping.entity';
 import { OrderDetailTopping } from '../entities/orderDetailTopping.entity';
 import { Customer } from '../entities/customer.entity';
 import { ProductTopping } from '../entities/productTopping.entity';
+import { Cart } from '../entities/cart.entity';
+import { CartTopping } from '../entities/cartTopping.entity';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { ProductTopping } from '../entities/productTopping.entity';
       Role,
       Permission,
       PermissionRole,
+      Cart,
+      CartTopping,
     ]),
   ],
   controllers: [OrderController],

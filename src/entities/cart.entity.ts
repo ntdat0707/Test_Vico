@@ -13,6 +13,9 @@ export class Cart {
   @Column('integer')
   quantity: number;
 
+  @Column('integer', { nullable: true })
+  sugar: number;
+
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP', select: false })
   createdAt: Date;
 
@@ -21,4 +24,10 @@ export class Cart {
 
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   deletedAt: Date;
+
+  setAttributes(object: any) {
+    if (object.productVariantId) this.productVariantId = object.productVariantId;
+    if (object.quantity) this.quantity = parseInt(object.quantity);
+    if (object.sugar || object.sugar === 0) this.sugar = parseInt(object.sugar);
+  }
 }

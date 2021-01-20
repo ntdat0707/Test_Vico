@@ -1,10 +1,11 @@
 import { PipeTransform, Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { AddProductInCartInput } from '../../../customer/customer.dto';
-import { checkUUID } from '../../../lib/pipeUtils/uuidValidate';
+import { EProductSugarOpt } from 'src/lib/constant';
+import { UpdateCartInput } from '../../../customer/customer.dto';
+import { checkUUID } from '../../pipeUtils/uuidValidate';
 
 @Injectable()
-export class AddProductInCartPipe implements PipeTransform<any> {
-  async transform(value: AddProductInCartInput) {
+export class UpdateCartPipe implements PipeTransform<any> {
+  async transform(value: UpdateCartInput) {
     if (!value.productVariantId) {
       throw new HttpException(
         {
@@ -38,6 +39,21 @@ export class AddProductInCartPipe implements PipeTransform<any> {
         {
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'QUANTITY_INVALID',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (
+      value.sugar &&
+      value.sugar !== EProductSugarOpt.NATURAL &&
+      value.sugar !== EProductSugarOpt.SUGAR_10ML &&
+      value.sugar !== EProductSugarOpt.SUGAR_5ML
+    ) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'SUGAR_OPTION_INVALID',
         },
         HttpStatus.BAD_REQUEST,
       );

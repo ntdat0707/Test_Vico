@@ -24,6 +24,9 @@ import {
   AddProductInCartInput,
   ChangePasswordInput,
   CreateCustomerInput,
+  DeleteProductInCartInput,
+  RefreshCartInput,
+  UpdateCartInput,
   UpdateCustomerAvatarInput,
   UpdateCustomerInput,
   UpdateProfileInput,
@@ -33,9 +36,12 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { DELETE_CUSTOMER, FILTER_CUSTOMER } from '../role/codePermission';
 import { Roles } from '../role/role.decorators';
 import { RolesGuard } from '../role/roles.guard';
-import { AddProductInCartPipe } from '../lib/validatePipe/customer/addProductInCard.class';
+import { AddProductInCartPipe } from '../lib/validatePipe/customer/addProductInCart.class';
 import { UpdateProfilePipe } from '../lib/validatePipe/customer/updateProfilePipe.class';
 import { ActiveCustomerPipe } from '../lib/validatePipe/customer/activeCustomerPipe.class';
+import { DeleteProductInCartPipe } from '../lib/validatePipe/customer/deleteProductInCartPipe.class';
+import { UpdateCartPipe } from '../lib/validatePipe/customer/updateCartPipe.class';
+import { RefreshCartPipe } from '../lib/validatePipe/customer/refreshCartPipe.class';
 @Controller('customer')
 @ApiTags('Customer')
 @UseFilters(new HttpExceptionFilter())
@@ -101,15 +107,52 @@ export class CustomerController {
     return await this.customerService.deleteCustomer(id);
   }
 
-  @Post('add-product-in-cart')
-  // @ApiBearerAuth()
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles([FILTER_ORDER])
+  @Post('/cart/add-product')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async addProductInCart(
     @GetUser('userId') customerId: string,
     @Body(new AddProductInCartPipe()) addProductInCartInput: AddProductInCartInput,
   ) {
     return await this.customerService.addProductInCart(customerId, addProductInCartInput);
+  }
+
+  @Get('/cart/get-all')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async getAllCartCustomer(@GetUser('userId') customerId: string) {
+    return await this.customerService.getAllCartCustomer(customerId);
+  }
+
+  @Put('/cart/update/:id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async updateCart(
+    @GetUser('userId') customerId: string,
+    @Param('id', new CheckUUID()) id: string,
+    @Body(new UpdateCartPipe()) updateCartInput: UpdateCartInput,
+  ) {
+    return await this.customerService.updateCart(customerId, id, updateCartInput);
+  }
+
+  @Delete('/cart/delete-product')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async deleteProductInCart(
+    @GetUser('userId') customerId: string,
+    @Body(new DeleteProductInCartPipe()) deleteProductInCartInput: DeleteProductInCartInput,
+  ) {
+    return await this.customerService.deleteProductInCart(customerId, deleteProductInCartInput);
+  }
+
+  @Post('/cart/refresh')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async refreshCart(
+    @GetUser('userId') customerId: string,
+    @Body(new RefreshCartPipe()) refreshCartInput: RefreshCartInput,
+  ) {
+    return await this.customerService.refreshCart(customerId, refreshCartInput);
   }
 
   @Post('create-customer')
