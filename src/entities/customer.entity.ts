@@ -26,7 +26,7 @@ export class Customer {
   @Column('varchar')
   fullName: string;
 
-  @Column('varchar')
+  @Column('varchar', { nullable: true })
   password: string;
 
   @Column('varchar', { nullable: true })

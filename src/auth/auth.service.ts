@@ -49,6 +49,16 @@ export class AuthService {
       );
     }
 
+    if (!customer.password || !customer.isActive) {
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.NOT_FOUND,
+          message: 'CUSTOMER_NOT_ACTIVATED',
+        },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
     const passwordIsValid = bcrypt.compareSync(loginUserInput.password, customer.password);
     if (!passwordIsValid) {
       throw new HttpException(

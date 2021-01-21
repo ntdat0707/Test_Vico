@@ -24,6 +24,7 @@ import { Topping } from '../entities/topping.entity';
 import { CartTopping } from '../entities/cartTopping.entity';
 import { ProductVariant } from '../entities/productVariant.entity';
 import _ = require('lodash');
+import { executeSendingEmail } from '../lib/emailer/config';
 
 @Injectable()
 export class CustomerService {
@@ -315,7 +316,7 @@ export class CustomerService {
       }
     }
 
-    if (!createCustomerInput.phoneNumber) {
+    if (createCustomerInput.phoneNumber) {
       existCustomer = await this.customerRepository.findOne({
         where: {
           phoneNumber: createCustomerInput.phoneNumber,
@@ -393,20 +394,44 @@ export class CustomerService {
       );
     }
 
-    if (!existCustomer.email && !activeCustomerInput.email) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'EMAIL_REQUIRED',
-        },
-        HttpStatus.NOT_FOUND,
-      );
+    if (!existCustomer.email) {
+      if (!activeCustomerInput.email) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: 'EMAIL_REQUIRED',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      } else {
+        existCustomer.email = activeCustomerInput.email;
+      }
     }
 
     existCustomer.isActive = true;
+    existCustomer.password = await bcrypt.hash(
+      Math.random()
+        .toString(36)
+        .substring(2, 4) +
+        Math.random()
+          .toString(36)
+          .substring(2, 8),
+      10,
+    );
 
     existCustomer.setAttributes(activeCustomerInput);
     await this.customerRepository.save(existCustomer);
+    const SEND_TO = existCustomer.email;
+    try {
+      await executeSendingEmail({
+        receivers: SEND_TO,
+        message: 'test 11111111111111111111111111111111111111111111',
+        subject: `test`,
+        type: 'text',
+      });
+    } catch (error) {
+      console.log(error);
+    }
     return {
       data: existCustomer,
     };
@@ -792,6 +817,7 @@ export class CustomerService {
         }
         await transactionalEntityManager.remove<Cart>(cartOfCustomer);
       }
+
       for (const product of refreshCartInput.productsInCart) {
         const existProductVariant: any = await this.productVariantRepository
           .createQueryBuilder('product_variant')

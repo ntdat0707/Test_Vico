@@ -800,24 +800,28 @@ export class OrderService {
     const orderNumber = ('0000' + (count + 1)).slice(-4);
     const orderCode = currentDate + orderNumber;
 
-    const existShipping = await this.shippingRepository
-      .createQueryBuilder('shipping')
-      .leftJoinAndMapOne('shipping.province', Province, 'province', '"shipping"."provinceId"=province.id')
-      .leftJoinAndMapOne('shipping.district', District, 'district', '"shipping"."districtId"=district.id')
-      .leftJoinAndMapOne('shipping.ward', Ward, 'ward', '"shipping"."wardId"=ward.id')
-      .where('shipping.id=:id', { id: createOrderByAdminInput.shippingId })
-      .andWhere('shipping.status=:status', { status: true })
-      .where('shipping.customerId=:customerId', { customerId: createOrderByAdminInput.customerId })
-      .getOne();
+    let existShipping = null;
+    if (createOrderByAdminInput.shippingId) {
+      existShipping = await this.shippingRepository
+        .createQueryBuilder('shipping')
+        .leftJoinAndMapOne('shipping.province', Province, 'province', '"shipping"."provinceId"=province.id')
+        .leftJoinAndMapOne('shipping.district', District, 'district', '"shipping"."districtId"=district.id')
+        .leftJoinAndMapOne('shipping.ward', Ward, 'ward', '"shipping"."wardId"=ward.id')
+        .where('shipping.id=:id', { id: createOrderByAdminInput.shippingId })
+        .andWhere('shipping.status=:status', { status: true })
+        .where('shipping.customerId=:customerId', { customerId: createOrderByAdminInput.customerId })
+        .getOne();
 
-    if (!existShipping) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'SHIPPING_NOT_EXIST',
-        },
-        HttpStatus.NOT_FOUND,
-      );
+      if (!existShipping) {
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.NOT_FOUND,
+            message: 'SHIPPING_NOT_EXIST',
+          },
+          HttpStatus.NOT_FOUND,
+        );
+      }
+      existShipping.isHaveOrder = true;
     }
 
     const arrUpdateStockProductVariant = [];
@@ -1050,8 +1054,10 @@ export class OrderService {
     let newOrderDetailTopping: OrderDetailTopping;
     const arrOrderDetail = [];
     const arrOrderDetailTopping = [];
-    existShipping.isHaveOrder = true;
     newOrder.setAttributes(createOrderByAdminInput);
+    if (createOrderByAdminInput.atStore) {
+      newOrder.status = 3;
+    }
     newOrder.customerId = createOrderByAdminInput.customerId;
     newOrder.orderCode = orderCode;
     await getManager().transaction(async transactionalEntityManager => {
@@ -1076,8 +1082,9 @@ export class OrderService {
       await transactionalEntityManager.save<OrderDetailTopping[]>(arrOrderDetailTopping);
       await transactionalEntityManager.save<ProductVariant[]>(arrUpdateStockProductVariant);
       await transactionalEntityManager.save<Topping[]>(arrUpdateStockTopping);
-      await transactionalEntityManager.save<Shipping>(existShipping);
-      // await transactionalEntityManager.delete(Cart, { customerId: customerId });
+      if (existShipping) {
+        await transactionalEntityManager.save<Shipping>(existShipping);
+      }
     });
     await this.connection.queryResultCache.clear();
     return { data: newOrder };

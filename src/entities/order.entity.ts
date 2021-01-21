@@ -38,6 +38,9 @@ export class Order {
   @Column('varchar')
   paymentType: string;
 
+  @Column('boolean', { default: false })
+  isPaid: boolean;
+
   @Column('timestamptz', { nullable: true })
   shippingTime: Date;
 

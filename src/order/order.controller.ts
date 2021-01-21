@@ -13,6 +13,7 @@ import { UpdateOrderPipe } from '../lib/validatePipe/order/updateOrderPipe.class
 import { OrderFilterPipe } from '../lib/validatePipe/order/orderFilterPipe.class';
 import { Roles } from '../role/role.decorators';
 import { FILTER_ORDER, GET_ORDERS } from '../role/codePermission';
+import { CreateOrderByAdminPipe } from '../lib/validatePipe/order/createOrderByAdminPipe.class';
 
 @Controller('orders')
 @ApiTags('Order')
@@ -84,10 +85,10 @@ export class OrderController {
     return this.orderService.updateOrder(id, updateOrderInput);
   }
 
-  @Post()
+  @Post('create-order-by-admin')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  createOrderByAdmin(@Body(new CreateOrderPipe()) createOrderByAdminInput: CreateOrderByAdminInput) {
+  createOrderByAdmin(@Body(new CreateOrderByAdminPipe()) createOrderByAdminInput: CreateOrderByAdminInput) {
     return this.orderService.createOrderByAdmin(createOrderByAdminInput);
   }
 }

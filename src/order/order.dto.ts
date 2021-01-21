@@ -204,7 +204,7 @@ export class CreateOrderByAdminInput {
   @ApiProperty()
   readonly totalDiscount: number;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   readonly shippingId: string;
 
   @ApiProperty()
@@ -224,6 +224,9 @@ export class CreateOrderByAdminInput {
 
   @ApiProperty()
   readonly note?: string;
+
+  @ApiProperty()
+  readonly atStore: boolean;
 
   @ApiProperty({ required: false, type: Date })
   readonly shippingTime?: Date;

@@ -60,6 +60,10 @@ services:
       REFRESH_TOKEN_EXPIRE_IN: 7d
       CHECK_TOKEN_FB_URL: https://graph.facebook.com/{id}/?access_token=
       CHECK_TOKEN_GG_URL: https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=
+      GMAIL_USER: son.nguyen@unibiz.io
+      GMAIL_PASS: Nguyenthanhson123
+      GMAIL_SENDING_EMAIL: son.nguyen@unibiz.io
+      GMAIL_SENDER_NAME: Midom Support
     networks:
       - mi_dom_backend_network
     links:
