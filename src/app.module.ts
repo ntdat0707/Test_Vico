@@ -8,7 +8,6 @@ import { CategoryModule } from './category/category.module';
 import { OrderModule } from './order/order.module';
 import { AuthModule } from './auth/auth.module';
 import * as redisStore from 'cache-manager-redis-store';
-import { ToppingModule } from './topping/topping.module';
 import { RoleModule } from './role/role.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { CategoryBlogModule } from './category-blog/category-blog.module';
@@ -22,16 +21,16 @@ import { DescriptionModule } from './description/description.module';
     CacheModule.register({
       store: redisStore,
       host: process.env.REDIS_HOST || 'localhost',
-      port: process.env.REDIS_PORT || '6380',
+      port: process.env.REDIS_PORT || '6381',
       auth_pass: process.env.REDIS_PASSWORD || 'ed5f884edd376efe6b792e93da90ad6d5b77ba509d4006e75ef141bf0e42d29a',
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DATABASE_HOST || 'localhost',
-      port: process.env.DATABASE_PORT ? parseInt(process.env.DATABASE_PORT) : 5435,
+      port: process.env.DATABASE_PORT ? parseInt(process.env.DATABASE_PORT, 10) : 5436,
       username: process.env.DATABASE_USER_NAME || 'postgres',
       password: process.env.DATABASE_PASSWORD || 'postgres',
-      database: process.env.DATABASE_NAME || 'mi_dom',
+      database: process.env.DATABASE_NAME || 'vico',
       entities: ['./dist/**/**.entity{.ts,.js}'],
       subscribers: ['./dist/**/**.subscriber{.ts,.js}'],
       synchronize: false,
@@ -46,7 +45,7 @@ import { DescriptionModule } from './description/description.module';
         duration: 30000, // 30 seconds
         options: {
           host: process.env.REDIS_HOST || 'localhost',
-          port: process.env.REDIS_PORT || '6380',
+          port: process.env.REDIS_PORT || '6381',
           password: process.env.REDIS_PASSWORD || 'ed5f884edd376efe6b792e93da90ad6d5b77ba509d4006e75ef141bf0e42d29a',
         },
       },
@@ -57,7 +56,6 @@ import { DescriptionModule } from './description/description.module';
     AuthModule,
     RoleModule,
     CategoryBlogModule,
-    ToppingModule,
     ShippingModule,
     BlogModule,
     CustomerModule,
@@ -71,7 +69,7 @@ export class AppModule {
     const client = cacheManager.store.getClient();
 
     client.on('error', (error: any) => {
-      console.info(error);
+      // console.info(error);
     });
   }
 }
