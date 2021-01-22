@@ -3,17 +3,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { ProductModule } from './product/product.module';
 import { CategoryModule } from './category/category.module';
-import { OrderModule } from './order/order.module';
 import { AuthModule } from './auth/auth.module';
 import * as redisStore from 'cache-manager-redis-store';
 import { RoleModule } from './role/role.module';
-import { ShippingModule } from './shipping/shipping.module';
-import { CategoryBlogModule } from './category-blog/category-blog.module';
-import { BlogModule } from './blog/blog.module';
-import { CustomerModule } from './customer/customer.module';
-import { DescriptionModule } from './description/description.module';
 
 @Module({
   imports: [
@@ -50,16 +43,9 @@ import { DescriptionModule } from './description/description.module';
         },
       },
     }),
-    ProductModule,
     CategoryModule,
-    OrderModule,
     AuthModule,
     RoleModule,
-    CategoryBlogModule,
-    ShippingModule,
-    BlogModule,
-    CustomerModule,
-    DescriptionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

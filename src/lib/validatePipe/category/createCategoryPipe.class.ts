@@ -2,7 +2,6 @@ import { PipeTransform, Injectable, HttpException, HttpStatus } from '@nestjs/co
 import * as moment from 'moment';
 import { isTrueSet } from '../../../lib/pipeUtils/isTrueSet';
 import { CreateCategoryInput } from '../../../category/category.dto';
-import { checkSlug } from '../../../lib/pipeUtils/slugValidate';
 
 @Injectable()
 export class CreateCategoryPipe implements PipeTransform<any> {
@@ -34,16 +33,6 @@ export class CreateCategoryPipe implements PipeTransform<any> {
         },
         HttpStatus.BAD_REQUEST,
       );
-    } else {
-      if (!checkSlug(value.slug)) {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.BAD_REQUEST,
-            message: 'SLUG_NOT_VALID',
-          },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
     }
     if (!value.pageTitle) {
       throw new HttpException(

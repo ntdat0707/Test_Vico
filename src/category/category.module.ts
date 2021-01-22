@@ -4,30 +4,18 @@ import { CategoryService } from './category.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Category } from '../entities/category.entity';
 import { MulterModule } from '@nestjs/platform-express';
-import { Product } from '../entities/product.entity';
 import { diskStorage } from 'multer';
 import { extname, resolve, basename } from 'path';
 import { Role } from '../entities/role.entity';
 import { Permission } from '../entities/permission.entity';
 import { PermissionRole } from '../entities/permissionRole.entity';
 import * as shortid from 'shortid';
-import { Blog } from '../entities/blog.entity';
-import { ProductCategory } from '../entities/productCategory.entity';
-import { CategoryBlog } from '../entities/categoryBlog.entity';
+
 import { RoleService } from '../role/role.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Category,
-      Product,
-      Role,
-      Permission,
-      PermissionRole,
-      Blog,
-      ProductCategory,
-      CategoryBlog,
-    ]),
+    TypeOrmModule.forFeature([Category, Role, Permission, PermissionRole]),
     MulterModule.registerAsync({
       useFactory: () => ({
         storage: diskStorage({
@@ -42,8 +30,8 @@ import { RoleService } from '../role/role.service';
           },
         }),
         limits: {
-          fileSize: parseInt(process.env.MAX_SIZE_PER_FILE_UPLOAD),
-          files: parseInt(process.env.MAX_NUMBER_FILE_UPLOAD),
+          fileSize: parseInt(process.env.MAX_SIZE_PER_FILE_UPLOAD, 10),
+          files: parseInt(process.env.MAX_NUMBER_FILE_UPLOAD, 10),
         },
       }),
     }),

@@ -1,11 +1,9 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   Post,
-  Put,
   Query,
   UploadedFile,
   UseFilters,
@@ -15,23 +13,14 @@ import {
 import { CategoryService } from './category.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { HttpExceptionFilter } from '../exception/httpException.filter';
-import { CreateCategoryInput, SettingPositionCategoryInput, UpdateCategoryInput } from './category.dto';
+import { CreateCategoryInput, SettingPositionCategoryInput } from './category.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateCategoryPipe } from '../lib/validatePipe/category/createCategoryPipe.class';
-import { UpdateCategoryPipe } from '../lib/validatePipe/category/updateCategoryPipe.class';
-import { CheckUUID } from '../lib/validatePipe/uuidPipe.class';
 import { CheckUnSignIntPipe } from '../lib/validatePipe/checkIntegerPipe.class';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../role/roles.guard';
 import { Roles } from '../role/role.decorators';
-import {
-  CREATE_CATEGORY,
-  DELETE_CATEGORY,
-  GET_CATEGORIES,
-  GET_CATEGORY,
-  SETTING_POSITION_CATEGORY,
-  UPDATE_CATEGORY,
-} from '../role/codePermission';
+import { CREATE_CATEGORY } from '../role/codePermission';
 
 @Controller('category')
 @ApiTags('Category')
@@ -73,30 +62,30 @@ export class CategoryController {
     return this.categoryService.createCategory(categoryPicture, createCategoryInput);
   }
 
-  @Put(':id')
-  @UseInterceptors(FileInterceptor('categoryPicture'))
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    type: UpdateCategoryInput,
-  })
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles([UPDATE_CATEGORY])
-  async updateCategory(
-    @Param('id', new CheckUUID()) id: string,
-    @Body(new UpdateCategoryPipe()) updateCategoryInput: UpdateCategoryInput,
-    @UploadedFile() categoryPicture: any,
-  ) {
-    return this.categoryService.updateCategory(id, updateCategoryInput, categoryPicture);
-  }
+  // @Put(':id')
+  // @UseInterceptors(FileInterceptor('categoryPicture'))
+  // @ApiConsumes('multipart/form-data')
+  // @ApiBody({
+  //   type: UpdateCategoryInput,
+  // })
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([UPDATE_CATEGORY])
+  // async updateCategory(
+  //   @Param('id', new CheckUUID()) id: string,
+  //   @Body(new UpdateCategoryPipe()) updateCategoryInput: UpdateCategoryInput,
+  //   @UploadedFile() categoryPicture: any,
+  // ) {
+  //   return this.categoryService.updateCategory(id, updateCategoryInput, categoryPicture);
+  // }
 
-  @Delete(':id')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles([DELETE_CATEGORY])
-  async deleteCategory(@Param('id', new CheckUUID()) id: string) {
-    return await this.categoryService.deleteCategory(id);
-  }
+  // @Delete(':id')
+  // @ApiBearerAuth()
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles([DELETE_CATEGORY])
+  // async deleteCategory(@Param('id', new CheckUUID()) id: string) {
+  //   return await this.categoryService.deleteCategory(id);
+  // }
 
   @Get('get-all/categories')
   async getAllCategories() {

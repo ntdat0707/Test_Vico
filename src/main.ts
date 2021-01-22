@@ -18,14 +18,14 @@ async function bootstrap() {
 
   const options = new DocumentBuilder()
     .addBearerAuth()
-    .setTitle('Midom')
-    .setDescription('The Midom API description')
+    .setTitle('Vico')
+    .setDescription('The Vico API description')
     .setVersion('3.0')
     .build();
   const document = SwaggerModule.createDocument(app, options, {
     ignoreGlobalPrefix: true,
   });
-  SwaggerModule.setup('midom', app, document);
+  SwaggerModule.setup('vico', app, document);
   await app.listen(3001);
 }
 bootstrap();

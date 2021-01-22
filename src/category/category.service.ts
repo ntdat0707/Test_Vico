@@ -1,12 +1,8 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from '../entities/category.entity';
-import { Repository, IsNull, Connection, Not, getManager, In } from 'typeorm';
-import { CreateCategoryInput, SettingPositionCategoryInput, UpdateCategoryInput } from './category.dto';
-import { Product } from '../entities/product.entity';
-import { Blog } from '../entities/blog.entity';
-import { ProductCategory } from '../entities/productCategory.entity';
-import { CategoryBlog } from '../entities/categoryBlog.entity';
+import { Repository, IsNull, Connection, Not, getManager } from 'typeorm';
+import { CreateCategoryInput, SettingPositionCategoryInput } from './category.dto';
 
 @Injectable()
 export class CategoryService {
@@ -14,14 +10,6 @@ export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-    @InjectRepository(CategoryBlog)
-    private categoryBlogRepository: Repository<CategoryBlog>,
-    @InjectRepository(Product)
-    private productRepository: Repository<Product>,
-    @InjectRepository(Blog)
-    private blogRepository: Repository<Blog>,
-    @InjectRepository(ProductCategory)
-    private productCategoryRepository: Repository<ProductCategory>,
     private connection: Connection,
   ) {}
 
@@ -46,7 +34,7 @@ export class CategoryService {
     return { data: existCategory };
   }
 
-  async getCategories(page = 1, limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE)) {
+  async getCategories(page = 1, limit: number = parseInt(process.env.DEFAULT_MAX_ITEMS_PER_PAGE, 10)) {
     this.logger.debug(`Running api getCategories at ${new Date()}`);
     const now = new Date();
     const categoryQuery = this.categoryRepository
@@ -114,64 +102,6 @@ export class CategoryService {
         HttpStatus.CONFLICT,
       );
     }
-    let existSlug: any = await this.productRepository
-      .createQueryBuilder('product')
-      .where(`slugs::text = :slug`, { slug: `%"${createCategoryInput.slug}"%` })
-      .andWhere('"deletedAt" is null')
-      .getOne();
-    if (existSlug) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.CONFLICT,
-          message: 'SLUG_ALREADY_EXIST',
-        },
-        HttpStatus.CONFLICT,
-      );
-    }
-
-    existSlug = await this.blogRepository
-      .createQueryBuilder('blog')
-      .where(`slugs::text = :slug`, { slug: `%"${createCategoryInput.slug}"%` })
-      .getOne();
-    if (existSlug) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.CONFLICT,
-          message: 'SLUG_ALREADY_EXIST',
-        },
-        HttpStatus.CONFLICT,
-      );
-    }
-
-    existSlug = await this.categoryRepository.findOne({
-      where: {
-        slug: createCategoryInput.slug,
-      },
-    });
-    if (existSlug) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.CONFLICT,
-          message: 'SLUG_ALREADY_EXIST',
-        },
-        HttpStatus.CONFLICT,
-      );
-    }
-
-    existSlug = await this.categoryBlogRepository.findOne({
-      where: {
-        slug: createCategoryInput.slug,
-      },
-    });
-    if (existSlug) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.CONFLICT,
-          message: 'SLUG_ALREADY_EXIST',
-        },
-        HttpStatus.CONFLICT,
-      );
-    }
 
     let newCategory = new Category();
     newCategory.setAttributes(createCategoryInput);
@@ -187,158 +117,101 @@ export class CategoryService {
     return { data: newCategory };
   }
 
-  async updateCategory(id: string, updateCategoryInput: UpdateCategoryInput, categoryPicture: any) {
-    this.logger.debug(`Running api updateCategory at ${new Date()}`);
-    let existCategory: any;
-    if (updateCategoryInput.name) {
-      existCategory = await this.categoryRepository.findOne({
-        where: {
-          name: updateCategoryInput.name,
-          id: Not(id),
-        },
-      });
-      if (existCategory) {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.CONFLICT,
-            message: 'CATEGORY_NAME_EXISTED',
-          },
-          HttpStatus.CONFLICT,
-        );
-      }
-    }
+  // async updateCategory(id: string, updateCategoryInput: UpdateCategoryInput, categoryPicture: any) {
+  //   this.logger.debug(`Running api updateCategory at ${new Date()}`);
+  //   let existCategory: any;
+  //   if (updateCategoryInput.name) {
+  //     existCategory = await this.categoryRepository.findOne({
+  //       where: {
+  //         name: updateCategoryInput.name,
+  //         id: Not(id),
+  //       },
+  //     });
+  //     if (existCategory) {
+  //       throw new HttpException(
+  //         {
+  //           statusCode: HttpStatus.CONFLICT,
+  //           message: 'CATEGORY_NAME_EXISTED',
+  //         },
+  //         HttpStatus.CONFLICT,
+  //       );
+  //     }
+  //   }
 
-    if (updateCategoryInput.slug) {
-      let existSlug: any = await this.productRepository
-        .createQueryBuilder('product')
-        .where(`slugs::text = :slug`, { slug: `${updateCategoryInput.slug}` })
-        .getOne();
-      if (existSlug) {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.BAD_REQUEST,
-            message: 'SLUG_ALREADY_EXIST',
-          },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
+  //   existCategory = await this.categoryRepository.findOne({
+  //     where: {
+  //       id: id,
+  //     },
+  //   });
 
-      existSlug = await this.categoryRepository.findOne({
-        where: {
-          slug: updateCategoryInput.slug,
-          id: Not(id),
-        },
-      });
-      if (existSlug) {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.BAD_REQUEST,
-            message: 'SLUG_ALREADY_EXIST',
-          },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
+  //   if (!existCategory) {
+  //     throw new HttpException(
+  //       {
+  //         statusCode: HttpStatus.NOT_FOUND,
+  //         message: 'CATEGORY_NOT_EXIST',
+  //       },
+  //       HttpStatus.NOT_FOUND,
+  //     );
+  //   }
 
-      existSlug = await this.blogRepository
-        .createQueryBuilder('blog')
-        .where(`slugs::text = :slug`, { slug: `${updateCategoryInput.slug}` })
-        .getOne();
-      if (existSlug) {
-        throw new HttpException(
-          {
-            statusCode: HttpStatus.BAD_REQUEST,
-            message: 'SLUG_ALREADY_EXIST',
-          },
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-    }
+  //   let arrUpdateProduct = [];
 
-    existCategory = await this.categoryRepository.findOne({
-      where: {
-        id: id,
-      },
-    });
+  //   existCategory.setAttributes(updateCategoryInput);
+  //   if (categoryPicture) {
+  //     existCategory.picture = categoryPicture.filename;
+  //   }
+  //   //clear cache
+  //   await this.connection.queryResultCache.clear();
+  //   await getManager().transaction(async transactionalEntityManager => {
+  //     if (arrUpdateProduct.length > 0) {
+  //       await transactionalEntityManager.update(Product, { id: In(arrUpdateProduct) }, { status: false });
+  //     }
+  //     await transactionalEntityManager.save<Category>(existCategory);
+  //   });
+  //   return {
+  //     data: existCategory,
+  //   };
+  // }
 
-    if (!existCategory) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'CATEGORY_NOT_EXIST',
-        },
-        HttpStatus.NOT_FOUND,
-      );
-    }
+  // async deleteCategory(id: string) {
+  //   this.logger.debug(`Running api deleteCategory at ${new Date()}`);
+  //   const existCategory: Category = await this.categoryRepository.findOne({
+  //     where: {
+  //       id: id,
+  //     },
+  //   });
 
-    let arrUpdateProduct = [];
-    if (existCategory.status) {
-      const productCategories = await this.productCategoryRepository.find({
-        where: {
-          categoryId: id,
-        },
-      });
+  //   if (!existCategory) {
+  //     throw new HttpException(
+  //       {
+  //         statusCode: HttpStatus.NOT_FOUND,
+  //         message: 'CATEGORY_NOT_EXIST',
+  //       },
+  //       HttpStatus.NOT_FOUND,
+  //     );
+  //   }
+  //   const productInCategory = await this.productCategoryRepository
+  //     .createQueryBuilder('productCategory')
+  //     .where('"productCategory"."categoryId" = :id', { id: id })
+  //     .leftJoinAndMapMany('productCategory.product', Product, ' product', 'productCategory.productId = product.id')
+  //     .getOne();
 
-      if (productCategories.length > 0) {
-        arrUpdateProduct = productCategories.map(x => x.productId);
-      }
-    }
+  //   if (productInCategory) {
+  //     throw new HttpException(
+  //       {
+  //         statusCode: HttpStatus.BAD_REQUEST,
+  //         message: 'CATEGORY_DELETE_NOT_ALLOW',
+  //       },
+  //       HttpStatus.BAD_REQUEST,
+  //     );
+  //   }
 
-    existCategory.setAttributes(updateCategoryInput);
-    if (categoryPicture) {
-      existCategory.picture = categoryPicture.filename;
-    }
-    //clear cache
-    await this.connection.queryResultCache.clear();
-    await getManager().transaction(async transactionalEntityManager => {
-      if (arrUpdateProduct.length > 0) {
-        await transactionalEntityManager.update(Product, { id: In(arrUpdateProduct) }, { status: false });
-      }
-      await transactionalEntityManager.save<Category>(existCategory);
-    });
-    return {
-      data: existCategory,
-    };
-  }
-
-  async deleteCategory(id: string) {
-    this.logger.debug(`Running api deleteCategory at ${new Date()}`);
-    const existCategory: Category = await this.categoryRepository.findOne({
-      where: {
-        id: id,
-      },
-    });
-
-    if (!existCategory) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'CATEGORY_NOT_EXIST',
-        },
-        HttpStatus.NOT_FOUND,
-      );
-    }
-    const productInCategory = await this.productCategoryRepository
-      .createQueryBuilder('productCategory')
-      .where('"productCategory"."categoryId" = :id', { id: id })
-      .leftJoinAndMapMany('productCategory.product', Product, ' product', 'productCategory.productId = product.id')
-      .getOne();
-
-    if (productInCategory) {
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.BAD_REQUEST,
-          message: 'CATEGORY_DELETE_NOT_ALLOW',
-        },
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    await this.connection.queryResultCache.clear();
-    await this.categoryRepository.softRemove(existCategory);
-    return {
-      data: 'success',
-    };
-  }
+  //   await this.connection.queryResultCache.clear();
+  //   await this.categoryRepository.softRemove(existCategory);
+  //   return {
+  //     data: 'success',
+  //   };
+  // }
 
   async getAllCategoriesByAdmin() {
     this.logger.debug(`Running api getAllCategoriesByAdmin at ${new Date()}`);
